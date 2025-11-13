@@ -1,0 +1,27 @@
+@import url('https://fonts.googleapis.com/css2?family=Gelasio:ital,wght@0,400..700;1,400..700&family=Montserrat:ital,wght@0,100..900;1,100..900&family=Open+Sans:ital,wght@0,300..800;1,300..800&family=Urbanist:ital,wght@0,100..900;1,100..900&family=Work+Sans:ital,wght@0,100..900;1,100..900&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-Urbanist: 'Urbanist', sans-sarif;
+}
+
+body {
+  font-family: 'Urbanist', sans-serif;
+}
+
+@layer utilities {
+  /* Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* IE and Edge */
+  .no-scrollbar {
+    -ms-overflow-style: none;
+  }
+
+  /* Firefox */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+}
