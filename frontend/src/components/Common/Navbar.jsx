@@ -61,7 +61,7 @@ function Navbar() {
 
                     {/* Right - Search ETC... */}
                     <div className="flex items-center gap-4 cursor-pointer">
-                        <Link className="flex items-center space-x-4 cursor-pointer">
+                        <Link to="/profile" className="flex items-center space-x-4 cursor-pointer">
                             <HiOutlineUser className="w-6 h-6 text-gray-700 hover:text-black" />
                         </Link>
                         <button 
