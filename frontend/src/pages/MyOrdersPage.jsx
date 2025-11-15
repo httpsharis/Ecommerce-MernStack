@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router'
 
 function MyOrdersPage() {
     const [order, setOrders] = useState([])
+    const navigate = useNavigate()
 
     useEffect(() => {
         // Simulating the fetching orders
@@ -24,7 +26,11 @@ function MyOrdersPage() {
 
             setOrders(mockOrders)
         }, 1000)
-    }, []) // FIXED: Added dependency array
+    }, [])
+
+    const handleRowClick = (orderId) => {
+        navigate(`/order/${orderId}`)
+    }
 
     return (
         <div className='w-full p-4 sm:p-6'>
@@ -49,6 +55,7 @@ function MyOrdersPage() {
                             order.map((order) => (
                                 <tr 
                                     key={order._id} 
+                                    onClick={() => handleRowClick(order._id)}
                                     className='border-b hover:bg-gray-50 cursor-pointer transition-colors'
                                 >
                                     <td className="py-2 px-2 sm:py-4 sm:px-4">
