@@ -1,5 +1,4 @@
 const app = require('./app.js')
-// Config file is not defined so we have to use the module dotenv
 const dotenv = require('dotenv')
 const connectDatabase = require('./config/database.js')
 
