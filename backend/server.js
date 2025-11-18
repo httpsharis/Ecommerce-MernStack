@@ -1,9 +1,12 @@
 const app = require('./app.js')
 const dotenv = require('dotenv')
 const connectDatabase = require('./config/database.js')
+const cors = require("cors")
+
+app.use(cors());
 
 // Handling Uncaught Execption
-process.on("uncaughtException", (err)=>{
+process.on("uncaughtException", (err) => {
     console.log(`Error: ${err.message}`)
     console.log(`Shutting down the server due to Uncaught Exception`)
     console.log()
@@ -15,7 +18,7 @@ dotenv.config({ path: "./backend/config/config.env" });
 // Connecting to the database - Note call after dotenv.config
 connectDatabase();
 
-const server = app.listen(process.env.PORT, ()=> {
+const server = app.listen(process.env.PORT, () => {
     console.log(`Server is working on https://localhost:${process.env.PORT}`);
 })
 
@@ -23,7 +26,7 @@ const server = app.listen(process.env.PORT, ()=> {
 process.on("unhandledRejection", err => {
     console.log(`Error: ${err.message}`)
     console.log(`Shutting down the server due to unhandled promise rejection`)
-    server.close(()=>{
+    server.close(() => {
         process.exit(1)
     })
 })
