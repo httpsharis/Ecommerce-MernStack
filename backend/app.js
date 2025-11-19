@@ -15,7 +15,7 @@ const product = require('./routes/productRoute');
 const user = require('./routes/userRoute');
 const order = require('./routes/orderRoute')
 
-app.use("/api/product", product)
+app.use("/api/products", product)
 app.use("/api/user", user)
 app.use("/api/order", order)
 

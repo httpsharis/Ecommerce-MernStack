@@ -1,8 +1,7 @@
 const express = require("express")
 const router = express.Router();
-const { protect } = require("./../middleware/auth")
-const { registerUser, loginUser, logout, forgetPassword, resentPassword, getUserDetails, updatePassword, updateProfile, getAllUsers, getSingleUser, updateUserRole, deleteUser } = require("../controllers/userController");
-const { isAuthenticatedUser, autherizeRoles } = require('../middleware/auth');
+const { registerUser, loginUser, logout, forgetPassword, resentPassword, profile, updatePassword, updateProfile, getAllUsers, getSingleUser, updateUserRole, deleteUser } = require("../controllers/userController");
+const { protect, autherizeRoles } = require('../middleware/auth');
 
 router
     .route("/register")
@@ -10,7 +9,11 @@ router
 
 router
     .route("/login")
-    .post(loginUser);
+    .get(loginUser);
+
+router
+    .route("/profile")
+    .get(protect, profile)
 
 router
     .route("/password/forgot")
@@ -25,25 +28,21 @@ router
     .get(logout)
 
 router
-    .route("/me")
-    .get(isAuthenticatedUser, getUserDetails)
-
-router
     .route("/password/update")
-    .put(isAuthenticatedUser, updatePassword)
+    .put(protect, updatePassword)
 
 router
     .route("/me/update")
-    .put(isAuthenticatedUser, updateProfile)
+    .put(protect, updateProfile)
 
 router
     .route("/admin/users")
-    .get(isAuthenticatedUser, autherizeRoles("admin"), getAllUsers)
+    .get(protect, autherizeRoles("admin"), getAllUsers)
 
 router
     .route("/admin/user/:id")
-    .get(isAuthenticatedUser, autherizeRoles("admin"), getSingleUser)
-    .put(isAuthenticatedUser, autherizeRoles("admin"), updateUserRole)
-    .delete(isAuthenticatedUser, autherizeRoles("admin"), deleteUser)
+    .get(protect, autherizeRoles("admin"), getSingleUser)
+    .put(protect, autherizeRoles("admin"), updateUserRole)
+    .delete(protect, autherizeRoles("admin"), deleteUser)
 
 module.exports = router;

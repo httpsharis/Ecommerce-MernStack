@@ -20,25 +20,28 @@ exports.registerUser = catchAsync(async (req, res, next) => {
 // Login User 
 exports.loginUser = catchAsync(async (req, res, next) => {
     const { email, password } = req.body;
-
-    // checking if user has given the password or not 
-    if (!email || !password) {
-        return next(new ErrorHandler("Please Enter Email & Password", 400))
-    }
-
     const user = await User.findOne({ email }).select("+password");
 
     if (!user) {
-        return next(new ErrorHandler("Invalid Email or Password", 401))
+        return res.status(400).json({ message: "Invalid Credentials" });
     }
 
-    const isPasswordMatch = await user.comparePassword(password);
-
-    if (!isPasswordMatch) {
-        return next(new ErrorHandler("Invalid Email or Password", 401))
+    const isMatch = await user.comparePassword(password);
+    if (!isMatch) {
+        return res.status(400).json({ message: "Invalid Credentials" });
     }
 
     sendToken(user, 200, res);
+})
+
+// Profile - Get User Details
+exports.profile = getUserDetails = catchAsync(async (req, res, next) => {
+    const user = await User.findById(req.user.id);
+
+    res.status(200).json({
+        success: true,
+        user,
+    });
 })
 
 // Logout 
@@ -117,17 +120,6 @@ exports.resentPassword = catchAsync(async (req, res, next) => {
 
     await user.save()
     sendToken(user, 200, res)
-})
-
-// Get User Details
-exports.getUserDetails = catchAsync(async (req, res, next) => {
-    const user = await User.findById(req.user.id);
-
-    res.status(200).json({
-        success: true,
-        user,
-    });
-
 })
 
 // Update User Password
@@ -310,7 +302,7 @@ exports.deleteReview = catchAsync(async (req, res, next) => {
         return next(new ErrorHandler("Product not found", 404));
     }
 
-    const reviews = product.reviews.filter(rev => rev._id.toString() !== req.query.i)
+    const reviews = product.reviews.filter(rev => rev._id.toString() !== req.query.id)
 
     let avg = 0;
     reviews.forEach((rev) => {
