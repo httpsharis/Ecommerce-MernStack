@@ -16,7 +16,7 @@ router.post(
 );
 
 router
-    .route("/admin/product/:id")
+    .route("/:id")
     .put(protect, autherizeRoles('admin'), updateProduct)
     .delete(protect, autherizeRoles('admin'), deleteProduct)
 
