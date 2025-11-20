@@ -160,19 +160,21 @@ exports.updateProduct = catchAsync(async (req, res, next) => {
 
 // 🟥 DELETE PRODUCT
 exports.deleteProduct = catchAsync(async (req, res, next) => {
-   const product = await Product.findByIdAndDelete(req.params.id);
+   try {
+      const product = await Product.findById(req.params.id);
 
-   if (!product) {
-      return res.status(404).json({
-         success: false,
-         message: "Product not found."
-      });
+      if (product) {
+         // Remove Product from DB
+         await product.deleteOne();
+         res.json({ message: "Product Deleted!" })
+      } else {
+         res.json({ message: "Product not found" })
+      }
+
+   } catch (error) {
+      console.log(error)
+      res.status(500).send("Server Error!")
    }
-
-   res.status(200).json({
-      success: true,
-      message: "Product deleted successfully"
-   });
 });
 
 // Not using because we used that in the middleware "../middleware/catchAsyncError.js"
