@@ -1,6 +1,7 @@
 const Product = require('../models/productModel');
 const catchAsync = require('../middleware/catchAsyncError');
 const ApiFeatures = require('../utils/apiFeatures');
+const { GiMaterialsScience } = require('react-icons/gi');
 
 // 🟩 CREATE PRODUCT
 exports.createProduct = catchAsync(async (req, res, next) => {
@@ -61,21 +62,93 @@ exports.createProduct = catchAsync(async (req, res, next) => {
 
 // 🟨 GET ALL PRODUCTS
 exports.getAllProducts = catchAsync(async (req, res, next) => {
+   try {
+      // User can select the following filter from the frontend
+      const {
+         collection,
+         size,
+         color,
+         gender,
+         minPrice,
+         MaxPrice,
+         sortBy,
+         search,
+         category,
+         material,
+         brand,
+         limit
+      } = req.query
 
-   const resultPerPage = 8;
+      let query = {};
 
-   const apiFeatures = new ApiFeatures(Product.find(), req.query)
-      .search()
-      .filter()
-      .pagination(resultPerPage)
+      // Filter Logic
+      if (collection && collection.toLocaleLowerCase() !== "all") {
+         query.collections = collection
+      }
 
-   const products = await apiFeatures.query;
+      if (category && category.toLocaleLowerCase() !== "all") {
+         query.category = category
+      }
 
-   res.status(200).json({
-      success: true,
-      count: products.length,
-      products
-   });
+      if (material) {
+         query.material = { $in: GiMaterialsScience.split(",") }
+      }
+
+      if (brand) {
+         query.brand = { $in: brand.split(",") }
+      }
+
+      if (size) {
+         query.size = { $in: size.split(",") }
+      }
+
+      if (color) {
+         query.color = { $in: [color] }
+      }
+
+      if (gender) {
+         query.gender = gender
+      }
+
+      if (minPrice || maxPrice) {
+         query.price = {};
+         if (minPrice) query.price.gte = Number(minPrice)
+         if (maxPrice) query.price.lte = Number(maxPrice)
+      }
+
+      if (search) {
+         query.$or = [
+            { name: { $regex, search, $option: '1' } },
+            { description: { $regex, search, $option: '1' } }
+         ]
+      }
+
+      // Sort Options
+      if (sortBy) {
+         switch (sortBy) {
+            case 'priceAsc':
+               sort = { price: 1 }
+               break
+            case 'priceDesc':
+               sort = { price: -1 }
+               break
+            case 'popularity':
+               sort = { rating: -1 }
+               break
+
+         }
+      }
+
+      // fetch products and apply sort options
+      let products = await Product.find(query)
+         .sort
+         .limit(Number(limit) || 0)
+      res.json(products
+      )
+   } catch (error) {
+      console.log(error)
+      res.status(500).send("Server Errop")
+   }
 });
 
 
