@@ -1,7 +1,5 @@
 const Product = require('../models/productModel');
 const catchAsync = require('../middleware/catchAsyncError');
-const ApiFeatures = require('../utils/apiFeatures');
-const { GiMaterialsScience } = require('react-icons/gi');
 
 // 🟩 CREATE PRODUCT
 exports.createProduct = catchAsync(async (req, res, next) => {
@@ -62,111 +60,116 @@ exports.createProduct = catchAsync(async (req, res, next) => {
 
 // 🟨 GET ALL PRODUCTS
 exports.getAllProducts = catchAsync(async (req, res, next) => {
-   try {
-      // User can select the following filter from the frontend
-      const {
-         collection,
-         size,
-         color,
-         gender,
-         minPrice,
-         MaxPrice,
-         sortBy,
-         search,
-         category,
-         material,
-         brand,
-         limit
-      } = req.query
+   const {
+      collection,
+      size,
+      color,
+      gender,
+      minPrice,
+      maxPrice,
+      sortBy,
+      search,
+      category,
+      material,
+      brand,
+      limit
+   } = req.query;
 
-      let query = {};
+   const query = {};
 
-      // Filter Logic
-      if (collection && collection.toLocaleLowerCase() !== "all") {
-         query.collections = collection
-      }
-
-      if (category && category.toLocaleLowerCase() !== "all") {
-         query.category = category
-      }
-
-      if (material) {
-         query.material = { $in: GiMaterialsScience.split(",") }
-      }
-
-      if (brand) {
-         query.brand = { $in: brand.split(",") }
-      }
-
-      if (size) {
-         query.size = { $in: size.split(",") }
-      }
-
-      if (color) {
-         query.color = { $in: [color] }
-      }
-
-      if (gender) {
-         query.gender = gender
-      }
-
-      if (minPrice || maxPrice) {
-         query.price = {};
-         if (minPrice) query.price.gte = Number(minPrice)
-         if (maxPrice) query.price.lte = Number(maxPrice)
-      }
-
-      if (search) {
-         query.$or = [
-            { name: { $regex, search, $option: '1' } },
-            { description: { $regex, search, $option: '1' } }
-         ]
-      }
-
-      // Sort Options
-      if (sortBy) {
-         switch (sortBy) {
-            case 'priceAsc':
-               sort = { price: 1 }
-               break
-            case 'priceDesc':
-               sort = { price: -1 }
-               break
-            case 'popularity':
-               sort = { rating: -1 }
-               break
-
-         }
-      }
-
-      // fetch products and apply sort options
-      let products = await Product.find(query)
-         .sort
-         .limit(Number(limit) || 0)
-      res.json(products
-      )
-   } catch (error) {
-      console.log(error)
-      res.status(500).send("Server Errop")
+   // Filter Logic
+   if (collection && collection.toLowerCase() !== "all") {
+      query.collections = { $in: Array.isArray(collection) ? collection : collection.split(",") };
    }
-});
 
-
-// Get Product details
-exports.getProductDetails = catchAsync(async (req, res, next) => {
-   const product = await Product.findById(req.params.id);
-
-   if (!product) {
-      return res.status(404).json({
-         success: false,
-         message: "Product not found."
-      });
+   if (category && category.toLowerCase() !== "all") {
+      query.category = category;
    }
+
+   if (material) {
+      query.materials = { $in: material.split(",") };
+   }
+
+   if (brand) {
+      query.brand = { $in: brand.split(",") };
+   }
+
+   if (size) {
+      query.sizes = { $in: size.split(",") };
+   }
+
+   if (color) {
+      query.colors = { $in: color.split(",") };
+   }
+
+   if (gender) {
+      query.gender = gender;
+   }
+
+   if (minPrice || maxPrice) {
+      query.price = {};
+      if (minPrice) query.price.$gte = Number(minPrice);
+      if (maxPrice) query.price.$lte = Number(maxPrice);
+   }
+
+   if (search) {
+      query.$or = [
+         { name: { $regex: search, $options: 'i' } },
+         { description: { $regex: search, $options: 'i' } }
+      ];
+   }
+
+   // Sort Options
+   let sortObj = {};
+   if (sortBy) {
+      switch (sortBy) {
+         case 'priceAsc':
+            sortObj = { price: 1 };
+            break;
+         case 'priceDesc':
+            sortObj = { price: -1 };
+            break;
+         case 'popularity':
+            sortObj = { rating: -1 };
+            break;
+         default:
+            sortObj = {};
+      }
+   }
+
+   // Build and execute query
+   let productsQuery = Product.find(query);
+
+   if (Object.keys(sortObj).length > 0) {
+      productsQuery = productsQuery.sort(sortObj);
+   }
+
+   if (limit) {
+      productsQuery = productsQuery.limit(Number(limit));
+   }
+
+   const products = await productsQuery.exec();
 
    res.status(200).json({
       success: true,
-      product
+      count: products.length,
+      products
    });
+});
+
+// Get Product details
+exports.getProductDetails = catchAsync(async (req, res, next) => {
+   try {
+      const product = await Product.findById(req.params.id);
+      if (product) {
+         res.json(product);
+      } else {
+         res.status(404).json({ message: "Product not found!" })
+      }
+   } catch (error) {
+      console.log(error)
+      res.status(500).send("Server Error!")
+   }
 });
 
 // 🟨 UPDATE PRODUCT
@@ -249,5 +252,63 @@ exports.deleteProduct = catchAsync(async (req, res, next) => {
       res.status(500).send("Server Error!")
    }
 });
+
+// @route GET /api/products/similar/:id
+// Retrives Similar Products based on the current product's gender and category
+// @access Public
+exports.getSimilarProducts = catchAsync(async (req, res, next) => {
+   const { id } = req.params
+
+   try {
+      const product = await Product.findById(id);
+
+      if (!product) {
+         return res.status(404).json({ message: "Product not found" })
+      }
+
+      const similarProducts = await Product.find({
+         _id: { $ne: id },
+         gender: product.gender,
+         category: product.category,
+      }).limit(4);
+
+      res.json(similarProducts)
+
+   } catch (error) {
+      console.log(error)
+      res.status(500).send("Server Error")
+   }
+});
+
+// @route GET /api/products/best-seller
+// @desc Retrive the Rroduct with highest rating
+// Access Public
+exports.getBestSellers = catchAsync(async (req, res, next) => {
+   try {
+      const bestSeller = await Product.findOne().sort({ rating: -1 })
+      if (bestSeller) {
+         res.json(bestSeller)
+      } else {
+         res.status(404).json({ message: "Not best seller found" })
+      }
+   } catch (error) {
+      console.log(error)
+      res.status(500).json("Server Error")
+   }
+})
+
+// @route GET /api/products/new-arrivals
+// @desc Retrive the new added products
+// Access Public
+exports.getNewArrivals = catchAsync(async (req, res) => {
+   try {
+      // Fetch atleast 8 products
+      const newArrivals = await Product.find().sort({ createdAt: -1 }).limit(8);
+      res.json(newArrivals)
+   } catch (error) {
+      console.log(error)
+      res.status(500).send("Server Error")
+   }
+})
 
 // Not using because we used that in the middleware "../middleware/catchAsyncError.js"
