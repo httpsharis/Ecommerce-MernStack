@@ -14,10 +14,12 @@ app.use(express.urlencoded({ extended: true }));
 const product = require('./routes/productRoute');
 const user = require('./routes/userRoute');
 const order = require('./routes/orderRoute')
+const cart = require('./routes/cartRoute')
 
 app.use("/api/products", product)
 app.use("/api/user", user)
 app.use("/api/order", order)
+app.use("/api/cart", cart)
 
 // Middleware for errors
 app.use(errorMiddleware)

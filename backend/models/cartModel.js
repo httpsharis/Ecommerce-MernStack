@@ -21,7 +21,7 @@ const cartItemSchema = new mongoose.Schema({
 
 const cartSchema = new mongoose.Schema({
     user: {
-        type: mongoose.Schema.Type.ObjectId,
+        type: mongoose.Schema.Types.ObjectId,
         ref: "User",
     },
     guestId: {
@@ -34,4 +34,4 @@ const cartSchema = new mongoose.Schema({
     }
 })
 
-module.exports = mongoose.model("Cart", cartItemSchema)
+module.exports = mongoose.model("Cart", cartSchema)
