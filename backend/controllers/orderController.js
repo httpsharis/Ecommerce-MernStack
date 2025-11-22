@@ -26,32 +26,42 @@ exports.newOrder = catchAsync(async (req, res, next) => {
     })
 })
 
-// Get Single Order Details
-exports.getSingeOrder = catchAsync(async (req, res, next) => {
-    const order = await Order.findById(req.params.id).populate("user", "name email");
+// @route GET /api/order/:id
+// @desc Get order details by ID 
+// @access Private
+exports.getSingeOrder = catchAsync(async (req, res) => {
+    try {
+        const order = await Order.findById(req.params.id).populate(
+            "user",
+            "name email",
+        );
 
-    if (!order) {
-        return next(new ErrorHandler("Order not found with this ID", 404))
+        if (!order) {
+            return res.status(404).json({ message: "Order not found" })
+        }
+
+        //Return the full order details
+        res.json(order)
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server Error" })
     }
-
-    res.status(200).json({
-        success: true,
-        order,
-    })
 })
 
-// Get logged in user Order
-exports.myOrders = catchAsync(async (req, res, next) => {
-    const orders = await Order.find({ user: req.user._id });
-
-    if (!orders || orders.length === 0) {
-        return next(new ErrorHandler("No orders found for this user", 404));
+// @route GET /api/orders/my-orders
+// @desc Get logged-in user's orders
+// @access Private
+exports.myOrders = catchAsync(async (req, res,) => {
+    try {
+        // Find order for authenticated user
+        const order = await Order.find({ user: req.user._id }).sort({
+            createdAt: -1,
+        }); // sort most recent orders
+        res.json(order)
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: "Server Error" })
     }
-
-    res.status(200).json({
-        success: true,
-        orders,
-    });
 });
 
 // Get all orders -- (Admin)

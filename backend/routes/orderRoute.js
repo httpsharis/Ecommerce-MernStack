@@ -3,12 +3,17 @@ const router = express.Router();
 const { protect, autherizeRoles } = require('../middleware/auth');
 const { newOrder, getSingeOrder, myOrders, getAllOrders, updateOrder, deleteOrder } = require("../controllers/orderController");
 
+router
+    .route('/my-orders')
+    .get(protect, myOrders);
+
+router
+    .route('/:id')
+    .get(protect, autherizeRoles('admin'), getSingeOrder)
 
 router.route('/order/new').post(protect, newOrder)
 
-router.route('/order/:id').get(protect, autherizeRoles('admin'), getSingeOrder)
 
-router.route('/orders/me').get(protect, myOrders);
 
 router.route('/admin/orders').get(protect, autherizeRoles('admin'), getAllOrders);
 
