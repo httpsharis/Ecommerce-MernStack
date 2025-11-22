@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 
-const orderItemSchema = new mongoose.Schema({
+const checkoutItemSchema = new mongoose.Schema({
     productId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Product",
@@ -10,29 +10,25 @@ const orderItemSchema = new mongoose.Schema({
         type: String,
         required: true,
     },
-    price: {
-        type: Number,
-        required: true
-    },
     image: {
         type: String,
-        required: true
+        required: true,
     },
-    size: String,
-    color: String,
-    qantity: {
+    price: {
         type: Number,
-        required: true
+        required: true,
     },
-})
+},
+    { _id: false }
+)
 
-const orderSchema = new mongoose.Schema({
+const checkoutSchema = new mongoose.Schema({
     user: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true,
     },
-    orderItems: [orderItemSchema],
+    checkoutItems: [checkoutItemSchema],
     shippingAddress: {
         address: { type: String, required: true },
         city: { type: String, required: true },
@@ -54,25 +50,20 @@ const orderSchema = new mongoose.Schema({
     paidAt: {
         type: Date,
     },
-    isDelivered: {
-        type: Boolean,
-        default: false,
-    },
-    deliveredAt: {
-        type: Date,
-    },
     paymentStatus: {
         type: String,
         default: "pending",
     },
-    status: {
-        type: String,
-        enum: ["Processing", "Shipping", "Delivered", "Cancelled"],
-        default: "Processing"
+    paymentDetails: {
+        type: mongoose.Schema.Types.Mixed, // store payment-related details(transaction ID, paypal resposnse)
+    },
+    isFinalized: {
+        type: Boolean,
+        default: false,
+    },
+    finalizedAt: {
+        type: Date,
     },
 },
-    { timestamps: true },
+    { timestamps: true }
 )
-
-module.exports = mongoose.model("Order", orderSchema)
-
