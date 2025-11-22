@@ -5,7 +5,7 @@ const { protect } = require("./../middleware/auth");
 const { createCheckout, updateCheckout, finalizeCheckout } = require("../controllers/checkoutController");
 
 router
-    .route("/checkout")
+    .route("/")
     .post(protect, createCheckout)
 
 router
@@ -15,3 +15,5 @@ router
 router
     .route("/:id/finalize")
     .post(protect, finalizeCheckout)
+
+module.exports = router;
