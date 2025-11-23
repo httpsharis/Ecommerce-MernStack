@@ -11,9 +11,9 @@
   },
   "dependencies": {
     "@afzalimdad9/overlay-navbar": "^1.1.0",
-    "@reduxjs/toolkit": "^2.9.0",
+    "@reduxjs/toolkit": "^2.10.1",
     "@tailwindcss/vite": "^4.1.16",
-    "axios": "^1.11.0",
+    "axios": "^1.13.2",
     "framer-motion": "^12.23.12",
     "overlay-navbar": "^1.2.3",
     "react": "^19.1.1",

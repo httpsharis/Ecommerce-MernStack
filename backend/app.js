@@ -21,6 +21,7 @@ const subscribe = require('./routes/subcriberRoute')
 
 const admin = require('./routes/adminRoutes')
 const adminProducts = require('./routes/adminProductRoute')
+const adminOrders = require('./routes/adminOrderRoute')
 
 app.use("/api/products", product)
 app.use("/api/user", user)
@@ -32,6 +33,7 @@ app.use("/api/subscribe", subscribe)
 
 app.use("/api/admin", admin)
 app.use("/api/admin/products", adminProducts)
+app.use("/api/admin", adminOrders)
 
 // Middleware for errors
 app.use(errorMiddleware)
