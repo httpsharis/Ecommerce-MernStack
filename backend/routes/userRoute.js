@@ -35,14 +35,4 @@ router
     .route("/me/update")
     .put(protect, updateProfile)
 
-router
-    .route("/admin/users")
-    .get(protect, autherizeRoles("admin"), getAllUsers)
-
-router
-    .route("/admin/user/:id")
-    .get(protect, autherizeRoles("admin"), getSingleUser)
-    .put(protect, autherizeRoles("admin"), updateUserRole)
-    .delete(protect, autherizeRoles("admin"), deleteUser)
-
 module.exports = router;

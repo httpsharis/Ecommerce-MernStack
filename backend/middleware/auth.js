@@ -44,9 +44,17 @@ exports.protect = async (req, res, next) => {
 
 exports.autherizeRoles = (...roles) => {
     return (req, res, next) => {
-        if (!roles.includes(req.user.role)) {
-            return res.status(403).json({ message: "Not authorized as admin" });
+        if (!req.user) {
+            return res.status(401).json({ success: false, message: "User not authenticated" });
         }
+
+        if (!roles.includes(req.user.role)) {
+            return res.status(403).json({ 
+                success: false, 
+                message: `Role: ${req.user.role} is not allowed to access this resource` 
+            });
+        }
+
         next();
-    }
-}
+    };
+};

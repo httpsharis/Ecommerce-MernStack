@@ -3,7 +3,7 @@ const router = express.Router();
 const multer = require("multer")
 const cloudinary = require("cloudinary").v2;
 const streamifier = require("streamifier")
-const path = require("path"); // ✅ Import path module
+const path = require("path"); 
 
 // ✅ Use absolute path to find config.env
 require("dotenv").config({ path: path.join(__dirname, "../config/config.env") });

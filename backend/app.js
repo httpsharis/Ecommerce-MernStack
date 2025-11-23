@@ -17,6 +17,10 @@ const order = require('./routes/orderRoute')
 const cart = require('./routes/cartRoute')
 const checkout = require('./routes/checkoutRoute')
 const upload = require('./routes/uploadRoute')
+const subscribe = require('./routes/subcriberRoute')
+
+const admin = require('./routes/adminRoutes')
+const adminProducts = require('./routes/adminProductRoute')
 
 app.use("/api/products", product)
 app.use("/api/user", user)
@@ -24,6 +28,10 @@ app.use("/api/order", order)
 app.use("/api/cart", cart)
 app.use("/api/checkout", checkout)
 app.use("/api/upload", upload)
+app.use("/api/subscribe", subscribe)
+
+app.use("/api/admin", admin)
+app.use("/api/admin/products", adminProducts)
 
 // Middleware for errors
 app.use(errorMiddleware)
