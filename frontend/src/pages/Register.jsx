@@ -1,16 +1,24 @@
 import React, { useState } from 'react'
 import { Link } from 'react-router';
 import register from './../assets/register.webp'
+import { registerUser } from './../redux/slice/authSlice'
+import { useDispatch } from 'react-redux'
 
 function Register() {
 
     const [name, setName] = useState("")
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("")
+    const dispatch = useDispatch();
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-        console.log("User Registered:", { name, email, password })
+        try {
+            const result = await dispatch(registerUser({ name, email, password }));
+            console.log(result);
+        } catch (err) {
+            console.error(err);
+        }
     }
 
     return (

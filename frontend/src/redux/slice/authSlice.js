@@ -48,6 +48,35 @@ export const loginUser = createAsyncThunk("auth/loginUser", async (userData, { r
     }
 });
 
+// Async thunk for user registration
+export const registerUser = createAsyncThunk("auth/registerUser", async (userData, { rejectWithValue }) => {
+    try {
+        const response = await axios.post(
+            `${import.meta.env.VITE_BACKEND_URL}/api/auth/register`,
+            userData,
+            { withCredentials: true }
+        );
+        
+        console.log('Register response:', response.data);
+        
+        if (!response.data.user || !response.data.token) {
+            throw new Error('Invalid response structure from server');
+        }
+        
+        localStorage.setItem('userInfo', JSON.stringify(response.data.user));
+        localStorage.setItem('token', response.data.token);
+        
+        return response.data;
+    } catch (error) {
+        console.error('Register error:', error);
+        return rejectWithValue(
+            error.response?.data?.message || 
+            error.message || 
+            'Registration failed'
+        );
+    }
+});
+
 // Slice 
 const authSlice = createSlice({
     name: 'auth',
@@ -67,6 +96,7 @@ const authSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
+            // Login cases
             .addCase(loginUser.pending, (state) => {
                 state.loading = true;
                 state.error = null;
@@ -76,6 +106,19 @@ const authSlice = createSlice({
                 state.user = action.payload.user;
             })
             .addCase(loginUser.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload;
+            })
+            // Register cases
+            .addCase(registerUser.pending, (state) => {
+                state.loading = true;
+                state.error = null;
+            })
+            .addCase(registerUser.fulfilled, (state, action) => {
+                state.loading = false;
+                state.user = action.payload.user;
+            })
+            .addCase(registerUser.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             });
