@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi'
 import { Link } from 'react-router'
+import axios from 'axios'
 
 function NewArivals() {
     const scrollRef = useRef(null);
@@ -10,96 +11,21 @@ function NewArivals() {
     const [startX, setStartX] = useState(0)
     const [scrollLeft, setScrollLeft] = useState(0)
 
-    const newArivals = [
-        {
-            _id: '1',
-            name: 'Stylish Jacket',
-            price: 120,
-            imges: [
-                {
-                    url: "https://picsum.photos/500/500?random=1",
-                    altText: 'Stylish Jactet',
-                },
-            ],
-        },
-        {
-            _id: '2',
-            name: 'Stylish Jacket',
-            price: 120,
-            imges: [
-                {
-                    url: "https://picsum.photos/500/500?random=2",
-                    altText: 'Stylish Jactet',
-                },
-            ],
-        },
-        {
-            _id: '3',
-            name: 'Stylish Jacket',
-            price: 120,
-            imges: [
-                {
-                    url: "https://picsum.photos/500/500?random=3",
-                    altText: 'Stylish Jactet',
-                },
-            ],
-        },
-        {
-            _id: '4',
-            name: 'Stylish Jacket',
-            price: 120,
-            imges: [
-                {
-                    url: "https://picsum.photos/500/500?random=4",
-                    altText: 'Stylish Jactet',
-                },
-            ],
-        },
-        {
-            _id: '5',
-            name: 'Stylish Jacket',
-            price: 120,
-            imges: [
-                {
-                    url: "https://picsum.photos/500/500?random=5",
-                    altText: 'Stylish Jactet',
-                },
-            ],
-        },
-        {
-            _id: '6',
-            name: 'Stylish Jacket',
-            price: 120,
-            imges: [
-                {
-                    url: "https://picsum.photos/500/500?random=6",
-                    altText: 'Stylish Jactet',
-                },
-            ],
-        },
-        {
-            _id: '7',
-            name: 'Stylish Jacket',
-            price: 120,
-            imges: [
-                {
-                    url: "https://picsum.photos/500/500?random=7",
-                    altText: 'Stylish Jactet',
-                },
-            ],
-        },
-        {
-            _id: '8',
-            name: 'Stylish Jacket',
-            price: 120,
-            imges: [
-                {
-                    url: "https://picsum.photos/500/500?random=8",
-                    altText: 'Stylish Jactet',
-                },
-            ],
-        },
-    ]
+    const [newArrivals, setNewArrivals] = useState([])
+
+    useEffect(() => {
+        const fetchNewArrivals = async () => {
+            try {
+                const response = await axios.get(
+                    `${import.meta.env.VITE_BACKEND_URL}/api/products/new-arrivals`
+                );
+                setNewArrivals(response.data)
+            } catch (error) {
+                console.error(error);
+            }
+        };
+        fetchNewArrivals()
+    }, [])
 
     const handleMouseDown = (e) => {
         setIsDragging(true);
@@ -148,7 +74,7 @@ function NewArivals() {
 
             return () => container.removeEventListener('scroll', updateScrollButton);
         }
-    }, []);
+    }, [newArrivals]);
 
     return (
         <section className='py-16 px-12 lg:px-12'>
@@ -193,7 +119,7 @@ function NewArivals() {
                 className={`container mx-auto px-6 overflow-x-auto scrollbar-hide scroll-smooth no-scrollbar user-select-none ${isDragging ? 'cursor-grabbing' : 'cursor-grab'}`}
             >
                 <div className="flex gap-6 pb-8">
-                    {newArivals.map((product) => (
+                    {newArrivals.map((product) => (
                         <div
                             key={product._id}
                             className='flex-none w-[280px] relative group'
@@ -205,8 +131,8 @@ function NewArivals() {
                         >
                             <div className="aspect-3/4 overflow-hidden rounded-lg select-none">
                                 <img
-                                    src={product.imges[0]?.url}
-                                    alt={product.imges[0]?.altText || product.name}
+                                    src={product.images?.[0]?.url || '.placeholder-image.jpg'}
+                                    alt={product.name}
                                     className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                                     draggable='false'
                                 />

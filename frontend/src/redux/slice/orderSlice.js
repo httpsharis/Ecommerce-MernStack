@@ -4,10 +4,10 @@ import axios from 'axios';
 // Initial state
 const initialState = {
     orders: [],
+    order: null, // ✅ Fixed: was orderDetails
     totalOrders: 0,
     loading: false,
     error: null,
-    orderDetails: null,
 }
 
 // Get my orders
@@ -34,10 +34,10 @@ export const fetchUserOrders = createAsyncThunk(
 // Get single order by ID
 export const fetchOrderDetails = createAsyncThunk(
     'order/fetchOrderDetails',
-    async (fetchOrderDetails, { rejectWithValue }) => {
+    async (orderId, { rejectWithValue }) => { // ✅ Fixed: parameter name was wrong
         try {
             const response = await axios.get(
-                `${import.meta.env.VITE_BACKEND_URL}/api/order/${fetchOrderDetails}`,
+                `${import.meta.env.VITE_BACKEND_URL}/api/order/${orderId}`, // ✅ Fixed: use orderId
                 {
                     withCredentials: true,
                     headers: {
@@ -74,7 +74,7 @@ const orderSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-            // Get my orders
+            // ==================== FETCH USER ORDERS ====================
             .addCase(fetchUserOrders.pending, (state) => {
                 state.loading = true;
                 state.error = null;
@@ -82,25 +82,26 @@ const orderSlice = createSlice({
             .addCase(fetchUserOrders.fulfilled, (state, action) => {
                 state.loading = false;
                 state.orders = action.payload.orders || [];
+                state.totalOrders = action.payload.totalOrders || action.payload.orders?.length || 0;
             })
             .addCase(fetchUserOrders.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             })
 
-            // Get order by ID
+            // ==================== FETCH ORDER DETAILS ====================
             .addCase(fetchOrderDetails.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
-            .addCase(fetchUserOrders.fulfilled, (state, action) => {
+            .addCase(fetchOrderDetails.fulfilled, (state, action) => { // ✅ Fixed: use fetchOrderDetails
                 state.loading = false;
                 state.order = action.payload.order;
             })
-            .addCase(fetchUserOrders.rejected, (state, action) => {
+            .addCase(fetchOrderDetails.rejected, (state, action) => { // ✅ Fixed: use fetchOrderDetails
                 state.loading = false;
                 state.error = action.payload;
-            })
+            });
     }
 });
 
