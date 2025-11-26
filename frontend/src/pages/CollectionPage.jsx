@@ -3,12 +3,22 @@ import { FaFilter } from "react-icons/fa";
 import FilterSidebar from '../components/Product/FilterSidebar';
 import SortOptions from '../components/Product/SortOptions';
 import ProductGrid from '../components/Product/ProductGrid';
-
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchProductsByFilters } from '../redux/slice/productsSlice';
+import { useSearchParams, useParams } from 'react-router';
 
 function CollectionPage() {
-    const [products, setProducts] = useState([])
+    const dispatch = useDispatch();
+    const { collection } = useParams();
+    const { products, loading, error } = useSelector((state) => state.products);
+    const [searchParams] = useSearchParams();
     const sidebarRef = useRef(null)
     const [isSidebarOpen, setIsSidebarOpen] = useState(false)
+
+    useEffect(() => {
+        const params = Object.fromEntries([...searchParams]);
+        dispatch(fetchProductsByFilters({ ...params, collection }));
+    }, [dispatch, searchParams, collection]);
 
     const toggleSidebar = () => {
         setIsSidebarOpen(!isSidebarOpen)
@@ -24,7 +34,7 @@ function CollectionPage() {
     useEffect(() => {
         // Add Event Listener for clicks
         document.addEventListener("mousedown", handleClickOutside)
-        
+
         // clean event listener
         return () => {
             document.removeEventListener("mousedown", handleClickOutside)
@@ -32,102 +42,6 @@ function CollectionPage() {
 
     }, [])
 
-    useEffect(() => {
-        setTimeout(() => {
-            const fetchProducts = [
-                {
-                    _id: '1',
-                    name: 'Stylish Jacket',
-                    price: 120,
-                    imges: [
-                        {
-                            url: "https://picsum.photos/500/500?random=1",
-                            altText: 'Stylish Jactet',
-                        },
-                    ],
-                },
-                {
-                    _id: '2',
-                    name: 'Stylish Jacket',
-                    price: 120,
-                    imges: [
-                        {
-                            url: "https://picsum.photos/500/500?random=2",
-                            altText: 'Stylish Jactet',
-                        },
-                    ],
-                },
-                {
-                    _id: '3',
-                    name: 'Stylish Jacket',
-                    price: 120,
-                    imges: [
-                        {
-                            url: "https://picsum.photos/500/500?random=3",
-                            altText: 'Stylish Jactet',
-                        },
-                    ],
-                },
-                {
-                    _id: '4',
-                    name: 'Stylish Jacket',
-                    price: 120,
-                    imges: [
-                        {
-                            url: "https://picsum.photos/500/500?random=4",
-                            altText: 'Stylish Jactet',
-                        },
-                    ],
-                },
-                {
-                    _id: '5',
-                    name: 'Stylish Jacket',
-                    price: 120,
-                    imges: [
-                        {
-                            url: "https://picsum.photos/500/500?random=5",
-                            altText: 'Stylish Jactet',
-                        },
-                    ],
-                },
-                {
-                    _id: '6',
-                    name: 'Stylish Jacket',
-                    price: 120,
-                    imges: [
-                        {
-                            url: "https://picsum.photos/500/500?random=6",
-                            altText: 'Stylish Jactet',
-                        },
-                    ],
-                },
-                {
-                    _id: '7',
-                    name: 'Stylish Jacket',
-                    price: 120,
-                    imges: [
-                        {
-                            url: "https://picsum.photos/500/500?random=7",
-                            altText: 'Stylish Jactet',
-                        },
-                    ],
-                },
-                {
-                    _id: '8',
-                    name: 'Stylish Jacket',
-                    price: 120,
-                    imges: [
-                        {
-                            url: "https://picsum.photos/500/500?random=8",
-                            altText: 'Stylish Jactet',
-                        },
-                    ],
-                },
-            ]
-
-            setProducts(fetchProducts)
-        }, 1000)
-    }, [])
     return (
         <div className='flex flex-col lg:flex-row'>
             {/* Mobile Filter Buttons */}
@@ -150,7 +64,7 @@ function CollectionPage() {
                 <SortOptions />
 
                 {/* Product Grid */}
-                <ProductGrid products={products} />
+                <ProductGrid products={products} loading={loading} error={error} />
             </div>
         </div>
     )
