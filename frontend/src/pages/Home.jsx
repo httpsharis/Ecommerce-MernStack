@@ -31,7 +31,7 @@ function Home() {
         const response = await axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/api/products/best-seller`
         );
-        setBestSellerProducts(response.data.product)
+        setBestSellerProducts(response.data)
       } catch (error) {
         console.error(error);
       }

@@ -19,8 +19,8 @@ function ProductGrid({ products, loading, error }) {
                     <div className="bg-white p-4 rounded-lg">
                         <div className="w-full h-96 mb-4">
                             <img
-                                src={product.images}
-                                alt={product.name}
+                                src={product.images[0]?.url || '/placeholder-image.jpg'}
+                                alt={product.name || 'Product Image'}
                                 className='w-full h-full object-cover rounded-lg'
                             />
                         </div>

@@ -183,44 +183,39 @@ const cartSlice = createSlice({
     },
     extraReducers: (builder) => {
         builder
-            // Fetch cart
             .addCase(fetchCart.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
             .addCase(fetchCart.fulfilled, (state, action) => {
                 state.loading = false;
-                state.cart = action.payload.cart || { products: [] };
+                state.cart = action.payload || { products: [] };
                 saveCartToStorage(state.cart);
             })
             .addCase(fetchCart.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             })
-
-            // Add to cart
             .addCase(addToCart.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
             .addCase(addToCart.fulfilled, (state, action) => {
                 state.loading = false;
-                state.cart = action.payload.cart || { products: [] };
+                state.cart = action.payload || { products: [] };
                 saveCartToStorage(state.cart);
             })
             .addCase(addToCart.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             })
-
-            // Update cart item
             .addCase(updateCartItem.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
             .addCase(updateCartItem.fulfilled, (state, action) => {
                 state.loading = false;
-                state.cart = action.payload.cart || { products: [] };
+                state.cart = action.payload || { products: [] };
                 saveCartToStorage(state.cart);
             })
             .addCase(updateCartItem.rejected, (state, action) => {
@@ -235,7 +230,7 @@ const cartSlice = createSlice({
             })
             .addCase(removeFromCart.fulfilled, (state, action) => {
                 state.loading = false;
-                state.cart = action.payload.cart || { products: [] };
+                state.cart = action.payload || { products: [] };
                 saveCartToStorage(state.cart);
             })
             .addCase(removeFromCart.rejected, (state, action) => {
@@ -250,7 +245,7 @@ const cartSlice = createSlice({
             })
             .addCase(mergeCart.fulfilled, (state, action) => {
                 state.loading = false;
-                state.cart = action.payload.cart || { products: [] };
+                state.cart = action.payload || { products: [] };
                 saveCartToStorage(state.cart);
             })
             .addCase(mergeCart.rejected, (state, action) => {
@@ -258,7 +253,7 @@ const cartSlice = createSlice({
                 state.error = action.payload;
             });
     }
-})
+});
 
 export const {
     clearCart,

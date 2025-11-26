@@ -31,51 +31,43 @@ function ProductDetails({ productId }) {
 
     useEffect(() => {
         if (selectedProduct?.images?.length > 0) {
-            setMainImage(selectedProduct.images[0].url)
+            setMainImage(selectedProduct.images[0].url);
         }
-    }, [selectedProduct])
+    }, [selectedProduct]);
 
     const handleQuantityChange = (action) => {
-        if (action === 'plus') setQuantity((prev) => prev + 1)
-        if (action === 'minus' && quantity > 1) setQuantity((prev) => prev - 1)
-    }
+        if (action === 'plus') setQuantity((prev) => prev + 1);
+        if (action === 'minus' && quantity > 1) setQuantity((prev) => prev - 1);
+    };
 
     const handleAddToCart = () => {
         if (!selectedSize || !selectedColor) {
-            toast.error('Please select a size and color before adding to cart.', {
-                duration: 1000,
-            })
-            return
+            toast.error("Please select a size and color", {
+                duration: 2000,
+            });
+            return;
         }
-        setIsButtonDisabled(true)
+        setIsButtonDisabled(true);
 
-        dispatch(
-            addToCart({
-                productId: productFetchId,
-                quantity,
-                size: selectedSize,
-                color: selectedColor,
-                guestId,
-                userId: user?._id,
-            })
-        )
-            .then(() => {
-                toast.success("Product added to cart!", {
-                    duration: 1000,
-                })
-            })
-            .finally(() => {
-                setIsButtonDisabled(false)
-            })
+        dispatch(addToCart({
+            productId: selectedProduct?._id,
+            name: selectedProduct?.name,
+            price: selectedProduct?.price,
+            image: mainImage,
+            quantity,
+            size: selectedSize,
+            color: selectedColor,
+            guestId,
+            userId: user?._id
+        }));
+        toast.success("Product added to cart", {
+            duration: 2000,
+        });
+        setIsButtonDisabled(false);
     };
 
-    if (loading) {
-        return <p>Loading...</p>
-    }
-
-    if (error) {
-        return <p>Error: {error}</p>
-    }
+    if (loading) return <p>Loading...</p>;
+    if (error) return <p>Error: {error}</p>;
 
     if (!selectedProduct) {
         return <div className="flex justify-center items-center h-screen"><p>Product not found</p></div>
@@ -216,7 +208,7 @@ function ProductDetails({ productId }) {
                         <h2 className="text-2xl text-center font-medium mb-4">
                             You May Also Like
                         </h2>
-                        <ProductGrid products={similarProducts} />
+                        <ProductGrid products={similarProducts} loading={loading} error={error} />
                     </div>
                 </div>
             )}
