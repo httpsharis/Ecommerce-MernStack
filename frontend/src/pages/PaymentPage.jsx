@@ -1,12 +1,17 @@
 import React, { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router'
 import { FiLock, FiCreditCard } from 'react-icons/fi'
+import { useDispatch, useSelector } from 'react-redux'
+import { payCheckout, finalizeCheckout } from '../redux/slice/checkoutSlice'
+import { clearCart } from '../redux/slice/cartSlice'
 
 function PaymentPage() {
     const navigate = useNavigate()
     const location = useLocation()
-    const shippingAddress = location.state?.shippingAddress || {}
-    
+    const dispatch = useDispatch()
+    const { checkoutId } = location.state || {}
+    const { cart } = useSelector((state) => state.cart)
+
     const [paymentData, setPaymentData] = useState({
         cardNumber: '',
         cardName: '',
@@ -15,22 +20,6 @@ function PaymentPage() {
     })
     const [errors, setErrors] = useState({})
     const [loading, setLoading] = useState(false)
-
-    const cart = {
-        products: [
-            {
-                id: 1,
-                name: "Stylish Jacket",
-                price: 120,
-            },
-            {
-                id: 2,
-                name: "Casual Sneakers",
-                price: 75,
-            },
-        ],
-        totalPrice: 195
-    }
 
     const handleChange = (e) => {
         const { name, value } = e.target
@@ -77,35 +66,54 @@ function PaymentPage() {
 
     const handleSubmit = async (e) => {
         e.preventDefault()
-        
+
         if (!validateForm()) {
             return
         }
 
         setLoading(true)
-        
+
         try {
-            // Simulate payment processing
-            await new Promise(resolve => setTimeout(resolve, 2000))
-            
-            // Navigate to order confirmation
-            navigate('/order-confirmation', {
-                state: {
-                    orderDetails: {
-                        orderId: `ORD-${Date.now()}`,
-                        shippingAddress,
-                        cart,
-                        paymentMethod: 'Credit Card',
-                        orderDate: new Date().toLocaleDateString()
-                    }
+            // 1. Simulate Payment (Mock)
+            // In a real app, you would send paymentData to a gateway here.
+            // We'll assume it succeeds and proceed to update the backend.
+
+            if (!checkoutId) {
+                setErrors({ submit: 'Checkout ID is missing. Please try again.' })
+                return;
+            }
+
+            // 2. Pay Checkout (Backend)
+            await dispatch(payCheckout({
+                checkoutId,
+                paymentData: {
+                    ...paymentData,
+                    paymentMethod: "Credit Card",
+                    paymentStatus: "paid"
                 }
+            })).unwrap();
+
+            // 3. Finalize Checkout (Convert to Order)
+            const result = await dispatch(finalizeCheckout(checkoutId)).unwrap();
+            const order = result.order; // Assuming the backend returns { order: ... }
+
+            // 4. Clear Cart
+            dispatch(clearCart());
+
+            // 5. Navigate to Order Confirmation
+            navigate('/order-confirmation', {
+                state: { order }
             })
-        } catch {
+
+        } catch (err) {
+            console.error("Payment failed:", err);
             setErrors({ submit: 'Payment failed. Please try again.' })
         } finally {
             setLoading(false)
         }
     }
+
+    if (!cart) return null;
 
     return (
         <div className='max-w-4xl mx-auto py-10 px-6'>
@@ -134,9 +142,8 @@ function PaymentPage() {
                                     name="cardNumber"
                                     value={paymentData.cardNumber}
                                     onChange={handleChange}
-                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                                        errors.cardNumber ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none ${errors.cardNumber ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                     placeholder="1234 5678 9012 3456"
                                     maxLength="19"
                                 />
@@ -157,9 +164,8 @@ function PaymentPage() {
                                 name="cardName"
                                 value={paymentData.cardName}
                                 onChange={handleChange}
-                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                                    errors.cardName ? 'border-red-500' : 'border-gray-300'
-                                }`}
+                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none ${errors.cardName ? 'border-red-500' : 'border-gray-300'
+                                    }`}
                                 placeholder="John Doe"
                             />
                             {errors.cardName && (
@@ -178,9 +184,8 @@ function PaymentPage() {
                                     name="expiryDate"
                                     value={paymentData.expiryDate}
                                     onChange={handleChange}
-                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                                        errors.expiryDate ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none ${errors.expiryDate ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                     placeholder="MM/YY"
                                     maxLength="5"
                                 />
@@ -199,9 +204,8 @@ function PaymentPage() {
                                     name="cvv"
                                     value={paymentData.cvv}
                                     onChange={handleChange}
-                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none ${
-                                        errors.cvv ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none ${errors.cvv ? 'border-red-500' : 'border-gray-300'
+                                        }`}
                                     placeholder="123"
                                     maxLength="4"
                                 />
@@ -235,10 +239,10 @@ function PaymentPage() {
                 <div className="lg:col-span-1">
                     <div className="bg-gray-50 p-6 rounded-lg shadow-md sticky top-4">
                         <h3 className="text-lg font-semibold mb-4">Order Summary</h3>
-                        
+
                         <div className="space-y-3 mb-4">
                             {cart.products.map((product) => (
-                                <div key={product.id} className="flex justify-between text-sm">
+                                <div key={`${product.productId}-${product.size}-${product.color}`} className="flex justify-between text-sm">
                                     <span className="text-gray-700">{product.name}</span>
                                     <span className="font-medium">${product.price}</span>
                                 </div>

@@ -1,32 +1,14 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router' // Fixed: should be 'react-router-dom' not 'react-router'
-
-const cart = {
-    products: [
-        {
-            id: 1, // Added: unique id for key prop
-            name: "Stylish Jacket",
-            size: "M",
-            color: "Black",
-            price: 120,
-            image: "https://picsum.photos/150?random=1"
-        },
-        {
-            id: 2, // Added: unique id for key prop
-            name: "Casual Sneakers",
-            size: "42",
-            color: "White",
-            price: 75,
-            image: "https://picsum.photos/150?random=2"
-        },
-    ],
-    totalPrice: 195
-}
+import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router'
+import { useDispatch, useSelector } from 'react-redux'
+import { createCheckout } from '../../redux/slice/checkoutSlice'
 
 function CheckOut() {
     const navigate = useNavigate()
-    // eslint-disable-next-line no-unused-vars
-    const [checkoutId, setCheckoutId] = useState(null)
+    const dispatch = useDispatch()
+    const { cart } = useSelector((state) => state.cart)
+    const { user } = useSelector((state) => state.auth)
+
     const [shippingAddress, setShippingAddress] = useState({
         firstName: "",
         lastName: "",
@@ -37,15 +19,35 @@ function CheckOut() {
         phone: "",
     })
 
-    // Fixed: added e parameter and preventDefault
-    const handleCreateCheckout = (e) => {
-        e.preventDefault()
-        console.log('Checkout submitted:', shippingAddress)
-        // Add your checkout logic here
+    useEffect(() => {
+        if (!cart || !cart.products || cart.products.length === 0) {
+            navigate("/")
+        }
+    }, [cart, navigate])
 
-        navigate("/payment", {
-            state: { shippingAddress }
-        })
+    const handleCreateCheckout = async (e) => {
+        e.preventDefault()
+        if (cart.products.length === 0) return;
+
+        const checkoutData = {
+            checkoutItems: cart.products,
+            shippingAddress,
+            paymentMethod: "Paypal",
+            totalPrice: cart.totalPrice,
+        }
+
+        try {
+            const result = await dispatch(createCheckout(checkoutData)).unwrap();
+            // Assuming result contains the created checkout object with an _id
+            navigate("/payment", {
+                state: {
+                    checkoutId: result._id,
+                    shippingAddress
+                }
+            })
+        } catch (err) {
+            console.error("Failed to create checkout:", err);
+        }
     }
 
 
@@ -63,7 +65,7 @@ function CheckOut() {
                         <label className="block text-gray-700">Email</label>
                         <input
                             type="email"
-                            value="user@example.com"
+                            value={user ? user.email : ""}
                             disabled
                             className='w-full p-2 border rounded border-gray-300' />
                     </div>
@@ -174,15 +176,9 @@ function CheckOut() {
                         />
                     </div>
                     <div className="mt-6">
-                        {!checkoutId ? (
-                            <button type="submit" className="w-full bg-black text-white py-3 rounded">
-                                Continue to Payment
-                            </button>
-                        ) : (
-                            <div className="">
-                                <h3 className="text-lg mb-4">Pay with Paypal</h3>
-                            </div>
-                        )}
+                        <button type="submit" className="w-full bg-black text-white py-3 rounded">
+                            Continue to Payment
+                        </button>
                     </div>
                 </form>
             </div>
@@ -191,8 +187,8 @@ function CheckOut() {
             <div className="bg-gray-50 p-6 rounded-lg">
                 <h3 className="text-lg mb-4">Order Summary</h3>
                 <div className="border-t border-gray-300 py-4 mb-4">
-                    {cart.products.map((product) => ( // Fixed: use product.id for key
-                        <div key={product.id} className="flex items-start justify-between py-2 border-b border-gray-300">
+                    {cart && cart.products.map((product, index) => (
+                        <div key={index} className="flex items-start justify-between py-2 border-b border-gray-300">
                             <div className="flex items-start">
                                 <img src={product.image} alt={product.name} className='w-20 h-24 object-cover mr-4' />
                                 <div>
@@ -201,7 +197,7 @@ function CheckOut() {
                                     <p className="text-gray-500">Color: {product.color}</p>
                                 </div>
                             </div>
-                            <p className="text-xl">${product.price}</p> {/* Fixed: removed optional chaining */}
+                            <p className="text-xl">${product.price}</p>
                         </div>
                     ))}
                 </div>
@@ -212,7 +208,7 @@ function CheckOut() {
                 </div>
                 <div className="flex justify-between text-lg mt-4 border-t border-gray-300 pt-4">
                     <p>Total</p>
-                    <p>${cart.totalPrice}</p> {/* Fixed: removed optional chaining */}
+                    <p>${cart ? cart.totalPrice : 0}</p>
                 </div>
             </div>
         </div>

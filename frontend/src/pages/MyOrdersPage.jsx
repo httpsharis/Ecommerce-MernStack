@@ -1,36 +1,23 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { useNavigate } from 'react-router'
+import { fetchUserOrders } from '../redux/slice/orderSlice'
 
 function MyOrdersPage() {
-    const [order, setOrders] = useState([])
     const navigate = useNavigate()
+    const dispatch = useDispatch()
+    const { orders, loading, error } = useSelector((state) => state.order)
 
     useEffect(() => {
-        // Simulating the fetching orders
-        setTimeout(() => {
-            const mockOrders = [
-                {
-                    _id: '3456',
-                    createdAt: new Date(),
-                    shippingAddress: { city: 'New York', country: "USA" },
-                    orderItems: [
-                        {
-                            name: 'Product 1',
-                            image: 'https://picsum.photos/500/500?random=2'
-                        }
-                    ],
-                    totalPrice: 100,
-                    isPaid: true,
-                }
-            ]
-
-            setOrders(mockOrders)
-        }, 1000)
-    }, [])
+        dispatch(fetchUserOrders())
+    }, [dispatch])
 
     const handleRowClick = (orderId) => {
         navigate(`/order/${orderId}`)
     }
+
+    if (loading) return <p>Loading...</p>
+    if (error) return <p>Error: {error}</p>
 
     return (
         <div className='w-full p-4 sm:p-6'>
@@ -51,10 +38,10 @@ function MyOrdersPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        {order.length > 0 ? (
-                            order.map((order) => (
-                                <tr 
-                                    key={order._id} 
+                        {orders && orders.length > 0 ? (
+                            orders.map((order) => (
+                                <tr
+                                    key={order._id}
                                     onClick={() => handleRowClick(order._id)}
                                     className='border-b hover:bg-gray-50 cursor-pointer transition-colors'
                                 >
