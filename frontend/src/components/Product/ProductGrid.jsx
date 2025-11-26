@@ -3,7 +3,11 @@ import { Link } from 'react-router'
 
 function ProductGrid({ products, loading, error }) {
     if (loading) {
-        return <p>loading---</p>
+        return <p>loading ...</p>
+    }
+
+    if (error) {
+        return <p>Error: {error}</p>
     }
     return (
         <div className='grid grid-col-1 sm:grid-cols-2 lg:grid-cols-4'>

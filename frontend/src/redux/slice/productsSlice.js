@@ -39,38 +39,55 @@ export const fetchProductsByFilters = createAsyncThunk(
 // ASYNC Thunk to fetch a single product by ID
 export const fetchProductDetails = createAsyncThunk(
     "products/fetchProductDetails",
-    async (id) => {
-        const response = await axios.get(
-            `${import.meta.env.VITE_BACKEND_URL}/api/products/${id}`
-        );
-        return response.data
+    async (id, { rejectWithValue }) => { // ✅ Added rejectWithValue for error handling
+        try {
+            const response = await axios.get(
+                `${import.meta.env.VITE_BACKEND_URL}/api/products/${id}`
+            );
+            console.log('Product details response:', response.data); // ✅ Debug log
+            return response.data.product || response.data; // ✅ Handle both formats
+        } catch (error) {
+            console.error('Error fetching product:', error);
+            return rejectWithValue(error.response?.data || error.message);
+        }
     }
 );
 
-// Aysnc Thunk to fetch similar Products and update them
+// Async Thunk to update product
 export const updateProduct = createAsyncThunk(
     'product/updateProducts',
-    async ({ id, productData }) => {
-        const response = await axios.put(
-            `${import.meta.env.VITE_BACKEND_URL}/api/products/${id}`, productData,
-            {
-                headers: {
-                    Authorization: `Bearer ${localStorage.getItem("userToken")}`
-                },
-            }
-        )
-        return response.data
+    async ({ id, productData }, { rejectWithValue }) => {
+        try {
+            const response = await axios.put(
+                `${import.meta.env.VITE_BACKEND_URL}/api/products/${id}`, 
+                productData,
+                {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem("token")}` // ✅ Fixed: was "userToken"
+                    },
+                }
+            )
+            return response.data
+        } catch (error) {
+            return rejectWithValue(error.response?.data || error.message);
+        }
     }
 )
 
-// Async Thunk to fetch smiliar products
+// Async Thunk to fetch similar products
 export const fetchSimilarProducts = createAsyncThunk(
     'products/fetchSimilarProducts',
-    async ({ id }) => {
-        const response = await axios.get(
-            `${import.meta.env.VITE_BACKEND_URL}/api/products/${id}`,
-        )
-        return response.data
+    async ({ id, category, gender }, { rejectWithValue }) => { // ✅ Fixed: need category/gender for similar products
+        try {
+            const response = await axios.get(
+                `${import.meta.env.VITE_BACKEND_URL}/api/products/similar/${id}`, // ✅ Fixed: use similar endpoint
+            )
+            console.log('Similar products response:', response.data); // ✅ Debug log
+            return response.data.products || response.data; // ✅ Handle both formats
+        } catch (error) {
+            console.error('Error fetching similar products:', error);
+            return rejectWithValue(error.response?.data || error.message);
+        }
     }
 )
 
@@ -116,6 +133,10 @@ const productSlice = createSlice({
                 brand: "",
                 limit: "",
             }
+        },
+        clearSelectedProduct: (state) => { // ✅ Added: clear product when navigating away
+            state.selectedProduct = null;
+            state.similarProducts = [];
         }
     },
     extraReducers: (builder) => {
@@ -127,11 +148,11 @@ const productSlice = createSlice({
         })
         .addCase(fetchProductsByFilters.fulfilled, (state, action) => {
             state.loading = false;
-            state.products = Array.isArray(action.payload) ? action.payload : [];
+            state.products = action.payload.products || action.payload || []; // ✅ Handle both formats
         })
         .addCase(fetchProductsByFilters.rejected, (state, action) => {
             state.loading = false;
-            state.error = action.error?.message || 'Failed to fetch products';
+            state.error = action.payload || action.error?.message || 'Failed to fetch products';
             state.products = [];
         })
 
@@ -146,7 +167,8 @@ const productSlice = createSlice({
         })
         .addCase(fetchProductDetails.rejected, (state, action) => {
             state.loading = false;
-            state.error = action.error?.message || 'Failed to fetch product details';
+            state.error = action.payload || action.error?.message || 'Failed to fetch product details';
+            state.selectedProduct = null; // ✅ Clear on error
         })
 
         // Handle Updating Product 
@@ -156,17 +178,20 @@ const productSlice = createSlice({
         })
         .addCase(updateProduct.fulfilled, (state, action) => {
             state.loading = false;
-            const updatedProduct = action.payload;
+            const updatedProduct = action.payload.product || action.payload; // ✅ Handle both formats
             const index = state.products.findIndex(
                 (product) => product._id === updatedProduct._id
             )
             if (index !== -1) {
                 state.products[index] = updatedProduct
             }
+            if (state.selectedProduct?._id === updatedProduct._id) { // ✅ Update selected product too
+                state.selectedProduct = updatedProduct;
+            }
         })
         .addCase(updateProduct.rejected, (state, action) => {
             state.loading = false;
-            state.error = action.error?.message || 'Failed to update product';
+            state.error = action.payload || action.error?.message || 'Failed to update product';
         })
 
         // Similar Products
@@ -176,14 +201,15 @@ const productSlice = createSlice({
         })
         .addCase(fetchSimilarProducts.fulfilled, (state, action) => {
             state.loading = false;
-            state.similarProducts = Array.isArray(action.payload) ? action.payload : [];
+            state.similarProducts = action.payload || [];
         })
         .addCase(fetchSimilarProducts.rejected, (state, action) => {
             state.loading = false;
-            state.error = action.error?.message || 'Failed to fetch similar products';
+            state.error = action.payload || action.error?.message || 'Failed to fetch similar products';
+            state.similarProducts = []; // ✅ Clear on error
         });
     },
 })
 
 export default productSlice.reducer;
-export const { setFilters, clearState } = productSlice.actions;
+export const { setFilters, clearState, clearSelectedProduct } = productSlice.actions;

@@ -8,6 +8,7 @@ import FeatureCollection from '../components/Product/FeatureCollection'
 import FeatureSection from '../components/Product/FeatureSection'
 import { useDispatch, useSelector } from 'react-redux'
 import axios from 'axios'
+import { fetchProductsByFilters } from '../redux/slice/productsSlice'
 
 function Home() {
 
@@ -30,7 +31,7 @@ function Home() {
         const response = await axios.get(
           `${import.meta.env.VITE_BACKEND_URL}/api/products/best-seller`
         );
-        setBestSellerProducts(response.data)
+        setBestSellerProducts(response.data.product)
       } catch (error) {
         console.error(error);
       }
