@@ -31,28 +31,28 @@ function OrderConfirmation() {
                     {/* Order ID and date */}
                     <div>
                         <h2 className="text-xl font-semibold">
-                            Order ID: {order._id}
+                            Order ID: {order?._id}
                         </h2>
                         <p className="text-gray-500">
-                            Order date: {new Date(order.createdAt).toLocaleDateString()}
+                            Order date: {order?.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}
                         </p>
                     </div>
                     {/* Estimated Delivery */}
                     <div>
                         <p className="text-emerald-700 text-sm">
                             Estimated Delivery:{" "}
-                            {calculateEstimatedDelivery(order.createdAt)}
+                            {order?.createdAt ? calculateEstimatedDelivery(order.createdAt) : 'N/A'}
                         </p>
                     </div>
                 </div>
                 {/* Order Items */}
                 <div className="mb-20">
-                    {order.orderItems.map((item) => (
+                    {order?.orderItems?.map((item, index) => (
                         <div
-                            key={item.productId}
+                            key={`${item.productId}-${index}`}
                             className="flex items-center mb-4">
                             <img
-                                src={item.image}
+                                src={item.image || 'https://via.placeholder.com/150'}
                                 alt={item.name}
                                 className='w-16 h-16 object-cover rounded-md mr-4'
                             />
@@ -74,22 +74,22 @@ function OrderConfirmation() {
                     {/* Payment Into */}
                     <div>
                         <h4 className="text-lg font-semibold mb-2">Payment</h4>
-                        <p className="text-gray-600">Paypal</p>
+                        <p className="text-gray-600">{order?.paymentMethod || 'Paypal'}</p>
                     </div>
 
                     {/* Delivery Info */}
                     <div>
                         <h4 className="text-lg font-semibold mb-2">Delivery</h4>
                         <p className="text-gray-600">
-                            {order.shippingAddress.address}
+                            {order?.shippingAddress?.address}
                         </p>
-                        <p className="text-gray-600">{order.shippingAddress.city}, {" "} {order.shippingAddress.country}</p>
+                        <p className="text-gray-600">{order?.shippingAddress?.city}, {" "} {order?.shippingAddress?.country}</p>
                     </div>
                 </div>
             </div>
             <div className="mt-8 flex justify-center space-x-4">
                 <button
-                    onClick={() => navigate('/profile')}
+                    onClick={() => navigate('/my-orders')}
                     className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600 transition-colors"
                 >
                     Checkout My Orders

@@ -17,7 +17,7 @@ function MyOrdersPage() {
     }
 
     if (loading) return <p>Loading...</p>
-    if (error) return <p>Error: {error}</p>
+    if (error) return <p>Error: {typeof error === 'object' ? JSON.stringify(error) : error}</p>
 
     return (
         <div className='w-full p-4 sm:p-6'>

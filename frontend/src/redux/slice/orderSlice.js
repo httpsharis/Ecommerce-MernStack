@@ -4,7 +4,7 @@ import axios from 'axios';
 // Initial state
 const initialState = {
     orders: [],
-    order: null, // ✅ Fixed: was orderDetails
+    order: null,
     totalOrders: 0,
     loading: false,
     error: null,
@@ -26,7 +26,7 @@ export const fetchUserOrders = createAsyncThunk(
             );
             return response.data;
         } catch (error) {
-            return rejectWithValue(error.response?.data || error.message);
+            return rejectWithValue(error.response?.data?.message || error.message);
         }
     }
 );
@@ -34,10 +34,10 @@ export const fetchUserOrders = createAsyncThunk(
 // Get single order by ID
 export const fetchOrderDetails = createAsyncThunk(
     'order/fetchOrderDetails',
-    async (orderId, { rejectWithValue }) => { // ✅ Fixed: parameter name was wrong
+    async (orderId, { rejectWithValue }) => {
         try {
             const response = await axios.get(
-                `${import.meta.env.VITE_BACKEND_URL}/api/order/${orderId}`, // ✅ Fixed: use orderId
+                `${import.meta.env.VITE_BACKEND_URL}/api/order/${orderId}`,
                 {
                     withCredentials: true,
                     headers: {
@@ -47,7 +47,7 @@ export const fetchOrderDetails = createAsyncThunk(
             );
             return response.data;
         } catch (error) {
-            return rejectWithValue(error.response?.data || error.message);
+            return rejectWithValue(error.response?.data?.message || error.message);
         }
     }
 );
@@ -94,11 +94,11 @@ const orderSlice = createSlice({
                 state.loading = true;
                 state.error = null;
             })
-            .addCase(fetchOrderDetails.fulfilled, (state, action) => { // ✅ Fixed: use fetchOrderDetails
+            .addCase(fetchOrderDetails.fulfilled, (state, action) => {
                 state.loading = false;
                 state.order = action.payload.order;
             })
-            .addCase(fetchOrderDetails.rejected, (state, action) => { // ✅ Fixed: use fetchOrderDetails
+            .addCase(fetchOrderDetails.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
             });
