@@ -4,7 +4,7 @@ const { protect, autherizeRoles } = require('../middleware/auth');
 const { newOrder, getSingeOrder, myOrders, getAllOrders, updateOrder, deleteOrder } = require("../controllers/orderController");
 
 router
-    .route('/my-orders')
+    .route('/myorders')
     .get(protect, myOrders);
 
 router

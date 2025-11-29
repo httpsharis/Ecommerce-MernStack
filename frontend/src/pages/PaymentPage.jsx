@@ -95,29 +95,40 @@ function PaymentPage() {
         }
 
         setLoading(true)
+        const toastId = toast.loading('Processing payment...');
 
         try {
-            const toastId = toast.loading('Processing payment...');
             await new Promise(resolve => setTimeout(resolve, 1500));
 
-            // ✅ FIX: Send correct data format matching backend expectation
-            await dispatch(payCheckout({
+            // Pay checkout
+            const payResult = await dispatch(payCheckout({
                 checkoutId,
                 paymentData: {
-                    paymentStatus: "paid", // ✅ Backend expects this at root level
-                    paymentDetails: { // ✅ Card details go inside paymentDetails
+                    paymentStatus: "paid",
+                    paymentDetails: {
                         cardNumber: paymentData.cardNumber.replace(/\s/g, ''),
                         cardName: paymentData.cardName,
                         expiryDate: paymentData.expiryDate,
                         cvv: paymentData.cvv,
                     }
                 }
-            })).unwrap();
+            }));
 
-            const finalizeResult = await dispatch(finalizeCheckout(checkoutId)).unwrap();
-            const order = finalizeResult.order || finalizeResult;
+            if (payResult.type === 'checkout/payCheckout/rejected') {
+                throw new Error(payResult.payload || 'Payment failed');
+            }
 
-            await dispatch(clearCart({ userId: user?._id, guestId })).unwrap();
+            // Finalize checkout
+            const finalizeResult = await dispatch(finalizeCheckout(checkoutId));
+
+            if (finalizeResult.type === 'checkout/finalizeCheckout/rejected') {
+                throw new Error(finalizeResult.payload || 'Failed to finalize order');
+            }
+
+            const order = finalizeResult.payload?.order || finalizeResult.payload;
+
+            // Clear cart
+            await dispatch(clearCart({ userId: user?._id, guestId }));
 
             sessionStorage.setItem('orderConfirmation', JSON.stringify({
                 order: order,
@@ -130,12 +141,15 @@ function PaymentPage() {
             toast.dismiss(toastId);
             toast.success('Payment successful!');
 
-            window.location.href = '/order-confirmation';
+            setTimeout(() => {
+                window.location.href = '/order-confirmation';
+            }, 500);
 
         } catch (err) {
-            toast.dismiss();
-            toast.error(err?.message || 'Payment failed. Please try again.');
-            setErrors({ submit: err?.message || 'Payment failed. Please try again.' })
+            console.error('Payment error:', err);
+            toast.dismiss(toastId);
+            toast.error(err?.message || err || 'Payment failed. Please try again.');
+            setErrors({ submit: err?.message || err || 'Payment failed. Please try again.' })
         } finally {
             setLoading(false)
         }

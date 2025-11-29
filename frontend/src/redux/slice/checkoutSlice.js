@@ -10,7 +10,6 @@ export const createCheckout = createAsyncThunk(
                 `${import.meta.env.VITE_BACKEND_URL}/api/checkout`,
                 checkoutData,
                 {
-                    withCredentials: true,
                     headers: {
                         Authorization: `Bearer ${localStorage.getItem('token')}`, // ✅ Fixed: was userToken
                     }

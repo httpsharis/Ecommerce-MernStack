@@ -15,12 +15,19 @@ export const fetchUserOrders = createAsyncThunk(
     'order/fetchUserOrders',
     async (_, { rejectWithValue }) => {
         try {
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                return rejectWithValue('No authentication token found. Please login again.');
+            }
+
             const response = await axios.get(
-                `${import.meta.env.VITE_BACKEND_URL}/api/order/my-orders`,
+                `${import.meta.env.VITE_BACKEND_URL}/api/order/myorders`,
                 {
                     withCredentials: true,
                     headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`,
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
                     }
                 }
             );
@@ -36,12 +43,19 @@ export const fetchOrderDetails = createAsyncThunk(
     'order/fetchOrderDetails',
     async (orderId, { rejectWithValue }) => {
         try {
+            const token = localStorage.getItem('token');
+            
+            if (!token) {
+                return rejectWithValue('No authentication token found. Please login again.');
+            }
+
             const response = await axios.get(
                 `${import.meta.env.VITE_BACKEND_URL}/api/order/${orderId}`,
                 {
                     withCredentials: true,
                     headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}`,
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json',
                     }
                 }
             );
@@ -57,46 +71,49 @@ const orderSlice = createSlice({
     name: 'order',
     initialState,
     reducers: {
-        // Clear order state
         clearOrder: (state) => {
             state.order = null;
             state.error = null;
         },
-        // Clear all orders
         clearOrders: (state) => {
             state.orders = [];
             state.error = null;
         },
-        // Clear error
         clearError: (state) => {
             state.error = null;
         }
     },
     extraReducers: (builder) => {
         builder
-            // ==================== FETCH USER ORDERS ====================
+            // Fetch user orders
             .addCase(fetchUserOrders.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
             .addCase(fetchUserOrders.fulfilled, (state, action) => {
                 state.loading = false;
-                state.orders = action.payload.orders || [];
-                state.totalOrders = action.payload.totalOrders || action.payload.orders?.length || 0;
+                if (action.payload.orders) {
+                    state.orders = action.payload.orders;
+                } else if (Array.isArray(action.payload)) {
+                    state.orders = action.payload;
+                } else {
+                    state.orders = [];
+                }
+                state.totalOrders = state.orders.length;
             })
             .addCase(fetchUserOrders.rejected, (state, action) => {
                 state.loading = false;
                 state.error = action.payload;
+                state.orders = [];
             })
-
-            // ==================== FETCH ORDER DETAILS ====================
+            // Fetch order details
             .addCase(fetchOrderDetails.pending, (state) => {
                 state.loading = true;
                 state.error = null;
             })
             .addCase(fetchOrderDetails.fulfilled, (state, action) => {
                 state.loading = false;
-                state.order = action.payload.order;
+                state.order = action.payload.order || action.payload;
             })
             .addCase(fetchOrderDetails.rejected, (state, action) => {
                 state.loading = false;

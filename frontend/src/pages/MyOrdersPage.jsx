@@ -16,14 +16,37 @@ function MyOrdersPage() {
         navigate(`/order/${orderId}`)
     }
 
-    if (loading) return <p>Loading...</p>
-    if (error) return <p>Error: {typeof error === 'object' ? JSON.stringify(error) : error}</p>
+    if (loading) {
+        return (
+            <div className='w-full p-4 sm:p-6 flex justify-center items-center min-h-[300px]'>
+                <p className="text-lg">Loading your orders...</p>
+            </div>
+        )
+    }
+
+    if (error) {
+        return (
+            <div className='w-full p-4 sm:p-6'>
+                <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                    <p className="font-semibold">Error loading orders</p>
+                    <p className="text-sm">{typeof error === 'object' ? JSON.stringify(error) : error}</p>
+                    <button 
+                        onClick={() => dispatch(fetchUserOrders())}
+                        className="mt-3 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                    >
+                        Retry
+                    </button>
+                </div>
+            </div>
+        )
+    }
 
     return (
         <div className='w-full p-4 sm:p-6'>
             <h2 className="text-xl sm:text-2xl font-bold mb-6">
                 My Orders
             </h2>
+
             <div className="w-full shadow-md rounded-lg overflow-x-auto">
                 <table className='w-full text-left text-gray-500'>
                     <thead className="bg-gray-100 text-xs uppercase text-gray-700">
@@ -38,7 +61,7 @@ function MyOrdersPage() {
                         </tr>
                     </thead>
                     <tbody>
-                        {orders && orders.length > 0 ? (
+                        {orders && Array.isArray(orders) && orders.length > 0 ? (
                             orders.map((order) => (
                                 <tr
                                     key={order._id}
@@ -47,29 +70,28 @@ function MyOrdersPage() {
                                 >
                                     <td className="py-2 px-2 sm:py-4 sm:px-4">
                                         <img
-                                            src={order.orderItems[0].image}
-                                            alt={order.orderItems[0].name}
+                                            src={order.orderItems?.[0]?.image || 'https://via.placeholder.com/150'}
+                                            alt={order.orderItems?.[0]?.name || 'Product'}
                                             className='w-10 h-10 sm:w-12 sm:h-12 rounded object-cover'
                                         />
                                     </td>
-                                    <td className="py-2 px-2 sm:py-4 sm:px-4 font-medium text-gray-900 whitespace-nowrap">
-                                        #{order._id}
+                                    <td className="py-2 px-2 sm:py-4 sm:px-4 font-medium text-gray-900 text-xs sm:text-sm">
+                                        #{order._id.slice(-8)}
                                     </td>
-                                    <td className="py-2 px-2 sm:py-4 sm:px-4 text-sm">
-                                        {new Date(order.createdAt).toLocaleDateString()}{" "}
-                                        {new Date(order.createdAt).toLocaleTimeString()}
+                                    <td className="py-2 px-2 sm:py-4 sm:px-4 text-xs sm:text-sm">
+                                        {new Date(order.createdAt).toLocaleDateString()}
                                     </td>
-                                    <td className="py-2 px-2 sm:py-4 sm:px-4 text-sm">
+                                    <td className="py-2 px-2 sm:py-4 sm:px-4 text-xs sm:text-sm">
                                         {order.shippingAddress ? `${order.shippingAddress.city}, ${order.shippingAddress.country}` : "N/A"}
                                     </td>
                                     <td className="py-2 px-2 sm:py-4 sm:px-4 text-center">
-                                        {order.orderItems.length}
+                                        {order.orderItems?.length || 0}
                                     </td>
                                     <td className="py-2 px-2 sm:py-4 sm:px-4 font-semibold text-gray-900">
-                                        ${order.totalPrice}
+                                        ${order.totalPrice?.toFixed(2) || '0.00'}
                                     </td>
                                     <td className="py-2 px-2 sm:py-4 sm:px-4">
-                                        <span className={`${order.isPaid ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"} px-3 py-1 rounded-full text-xs sm:text-sm font-medium`}>
+                                        <span className={`${order.isPaid ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"} px-2 sm:px-3 py-1 rounded-full text-xs font-medium`}>
                                             {order.isPaid ? "Paid" : "Pending"}
                                         </span>
                                     </td>
@@ -80,7 +102,13 @@ function MyOrdersPage() {
                                 <td
                                     colSpan={7}
                                     className="py-8 px-4 text-center text-gray-500">
-                                    You have no orders
+                                    <p className="text-lg mb-2">You have no orders yet</p>
+                                    <button
+                                        onClick={() => navigate('/')}
+                                        className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                                    >
+                                        Start Shopping
+                                    </button>
                                 </td>
                             </tr>
                         )}
