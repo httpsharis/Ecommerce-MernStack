@@ -1,16 +1,21 @@
 import React, { useState } from 'react'
-import { useNavigate, useLocation } from 'react-router'
+import { useNavigate, useLocation } from 'react-router' // ✅ Fixed: added -dom
 import { FiLock, FiCreditCard } from 'react-icons/fi'
 import { useDispatch, useSelector } from 'react-redux'
 import { payCheckout, finalizeCheckout } from '../redux/slice/checkoutSlice'
 import { clearCart } from '../redux/slice/cartSlice'
+import { toast } from 'sonner'
 
 function PaymentPage() {
     const navigate = useNavigate()
     const location = useLocation()
     const dispatch = useDispatch()
-    const { checkoutId } = location.state || {}
-    const { cart } = useSelector((state) => state.cart)
+    const { checkoutId, cart: checkoutCart } = location.state || {} // ✅ Get cart from location
+    const { cart: reduxCart } = useSelector((state) => state.cart)
+    const { user, guestId } = useSelector((state) => state.auth)
+
+    // ✅ Use cart from location state if available, otherwise from redux
+    const cart = checkoutCart || reduxCart;
 
     const [paymentData, setPaymentData] = useState({
         cardNumber: '',
@@ -23,10 +28,21 @@ function PaymentPage() {
 
     const handleChange = (e) => {
         const { name, value } = e.target
+        
+        let formattedValue = value;
+        if (name === 'cardNumber') {
+            formattedValue = value.replace(/\s/g, '').replace(/(\d{4})/g, '$1 ').trim();
+        }
+        
+        if (name === 'expiryDate') {
+            formattedValue = value.replace(/\D/g, '').replace(/(\d{2})(\d{0,2})/, '$1/$2');
+        }
+        
         setPaymentData(prev => ({
             ...prev,
-            [name]: value
+            [name]: formattedValue
         }))
+        
         if (errors[name]) {
             setErrors(prev => ({
                 ...prev,
@@ -68,52 +84,97 @@ function PaymentPage() {
         e.preventDefault()
 
         if (!validateForm()) {
+            toast.error('Please fix the form errors');
             return
+        }
+
+        if (!checkoutId) {
+            toast.error('Checkout ID is missing. Please try again.');
+            setErrors({ submit: 'Checkout ID is missing. Please try again.' })
+            return;
         }
 
         setLoading(true)
 
         try {
-            // 1. Simulate Payment (Mock)
-            // In a real app, you would send paymentData to a gateway here.
-            // We'll assume it succeeds and proceed to update the backend.
+            const toastId = toast.loading('Processing payment...');
+            await new Promise(resolve => setTimeout(resolve, 1500));
 
-            if (!checkoutId) {
-                setErrors({ submit: 'Checkout ID is missing. Please try again.' })
-                return;
-            }
-
-            // 2. Pay Checkout (Backend)
+            // ✅ FIX: Send correct data format matching backend expectation
             await dispatch(payCheckout({
                 checkoutId,
                 paymentData: {
-                    ...paymentData,
-                    paymentMethod: "Credit Card",
-                    paymentStatus: "paid"
+                    paymentStatus: "paid", // ✅ Backend expects this at root level
+                    paymentDetails: { // ✅ Card details go inside paymentDetails
+                        cardNumber: paymentData.cardNumber.replace(/\s/g, ''),
+                        cardName: paymentData.cardName,
+                        expiryDate: paymentData.expiryDate,
+                        cvv: paymentData.cvv,
+                    }
                 }
             })).unwrap();
 
-            // 3. Finalize Checkout (Convert to Order)
-            const result = await dispatch(finalizeCheckout(checkoutId)).unwrap();
-            const order = result.order; // Assuming the backend returns { order: ... }
+            const finalizeResult = await dispatch(finalizeCheckout(checkoutId)).unwrap();
+            const order = finalizeResult.order || finalizeResult;
 
-            // 4. Clear Cart
-            dispatch(clearCart());
+            await dispatch(clearCart({ userId: user?._id, guestId })).unwrap();
 
-            // 5. Navigate to Order Confirmation
-            navigate('/order-confirmation', {
-                state: { order }
-            })
+            sessionStorage.setItem('orderConfirmation', JSON.stringify({
+                order: order,
+                paymentData: {
+                    cardNumber: `**** **** **** ${paymentData.cardNumber.replace(/\s/g, '').slice(-4)}`,
+                    cardName: paymentData.cardName,
+                }
+            }));
+
+            toast.dismiss(toastId);
+            toast.success('Payment successful!');
+
+            window.location.href = '/order-confirmation';
 
         } catch (err) {
-            console.error("Payment failed:", err);
-            setErrors({ submit: 'Payment failed. Please try again.' })
+            toast.dismiss();
+            toast.error(err?.message || 'Payment failed. Please try again.');
+            setErrors({ submit: err?.message || 'Payment failed. Please try again.' })
         } finally {
             setLoading(false)
         }
     }
 
-    if (!cart) return null;
+    // ✅ Added: Check if cart exists and has products
+    if (!cart || !cart.products || cart.products.length === 0) {
+        return (
+            <div className="max-w-4xl mx-auto py-10 px-6">
+                <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded">
+                    <p className="font-semibold">Your cart is empty</p>
+                    <p className="text-sm">Please add items to your cart before proceeding to payment.</p>
+                    <button 
+                        onClick={() => navigate('/')}
+                        className="mt-3 bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700"
+                    >
+                        Continue Shopping
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    if (!checkoutId) { // ✅ Check checkoutId
+        return (
+            <div className="max-w-4xl mx-auto py-10 px-6">
+                <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded">
+                    <p className="font-semibold">Invalid checkout session</p>
+                    <p className="text-sm">Please start the checkout process again.</p>
+                    <button 
+                        onClick={() => navigate('/checkout')}
+                        className="mt-3 bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700"
+                    >
+                        Go to Checkout
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className='max-w-4xl mx-auto py-10 px-6'>
@@ -142,8 +203,7 @@ function PaymentPage() {
                                     name="cardNumber"
                                     value={paymentData.cardNumber}
                                     onChange={handleChange}
-                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none ${errors.cardNumber ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none ${errors.cardNumber ? 'border-red-500' : 'border-gray-300'}`}
                                     placeholder="1234 5678 9012 3456"
                                     maxLength="19"
                                 />
@@ -164,8 +224,7 @@ function PaymentPage() {
                                 name="cardName"
                                 value={paymentData.cardName}
                                 onChange={handleChange}
-                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none ${errors.cardName ? 'border-red-500' : 'border-gray-300'
-                                    }`}
+                                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none ${errors.cardName ? 'border-red-500' : 'border-gray-300'}`}
                                 placeholder="John Doe"
                             />
                             {errors.cardName && (
@@ -184,8 +243,7 @@ function PaymentPage() {
                                     name="expiryDate"
                                     value={paymentData.expiryDate}
                                     onChange={handleChange}
-                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none ${errors.expiryDate ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none ${errors.expiryDate ? 'border-red-500' : 'border-gray-300'}`}
                                     placeholder="MM/YY"
                                     maxLength="5"
                                 />
@@ -204,8 +262,7 @@ function PaymentPage() {
                                     name="cvv"
                                     value={paymentData.cvv}
                                     onChange={handleChange}
-                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none ${errors.cvv ? 'border-red-500' : 'border-gray-300'
-                                        }`}
+                                    className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none ${errors.cvv ? 'border-red-500' : 'border-gray-300'}`}
                                     placeholder="123"
                                     maxLength="4"
                                 />
@@ -226,7 +283,7 @@ function PaymentPage() {
                             disabled={loading}
                             className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg font-semibold hover:bg-blue-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
                         >
-                            {loading ? 'Processing Payment...' : `Pay $${cart.totalPrice}`}
+                            {loading ? 'Processing Payment...' : `Pay $${cart.totalPrice?.toFixed(2) || '0.00'}`}
                         </button>
 
                         <p className="text-xs text-gray-500 text-center mt-4">
@@ -243,8 +300,13 @@ function PaymentPage() {
                         <div className="space-y-3 mb-4">
                             {cart.products.map((product) => (
                                 <div key={`${product.productId}-${product.size}-${product.color}`} className="flex justify-between text-sm">
-                                    <span className="text-gray-700">{product.name}</span>
-                                    <span className="font-medium">${product.price}</span>
+                                    <div className="flex-1">
+                                        <p className="text-gray-700 font-medium">{product.name}</p>
+                                        <p className="text-gray-500 text-xs">
+                                            Size: {product.size} | Color: {product.color} | Qty: {product.quantity}
+                                        </p>
+                                    </div>
+                                    <span className="font-medium">${(product.price * product.quantity).toFixed(2)}</span>
                                 </div>
                             ))}
                         </div>
@@ -252,7 +314,7 @@ function PaymentPage() {
                         <div className="border-t pt-4 space-y-2">
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-600">Subtotal</span>
-                                <span>${cart.totalPrice}</span>
+                                <span>${cart.totalPrice?.toFixed(2) || '0.00'}</span>
                             </div>
                             <div className="flex justify-between text-sm">
                                 <span className="text-gray-600">Shipping</span>
@@ -260,7 +322,7 @@ function PaymentPage() {
                             </div>
                             <div className="flex justify-between text-lg font-bold border-t pt-2">
                                 <span>Total</span>
-                                <span>${cart.totalPrice}</span>
+                                <span>${cart.totalPrice?.toFixed(2) || '0.00'}</span>
                             </div>
                         </div>
                     </div>

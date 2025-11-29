@@ -4,7 +4,7 @@ import axios from 'axios';
 // Create checkout
 export const createCheckout = createAsyncThunk(
     'checkout/createCheckout',
-    async (checkoutData, { rejectWithValue }) => { // ✅ Fixed: was (checkoutdata, (rejectWithValue))
+    async (checkoutData, { rejectWithValue }) => { 
         try {
             const response = await axios.post(
                 `${import.meta.env.VITE_BACKEND_URL}/api/checkout`,
@@ -51,7 +51,7 @@ export const payCheckout = createAsyncThunk(
         try {
             const response = await axios.put(
                 `${import.meta.env.VITE_BACKEND_URL}/api/checkout/${checkoutId}/pay`,
-                paymentData,
+                paymentData, // ✅ Send paymentData directly (contains paymentStatus and paymentDetails)
                 {
                     withCredentials: true,
                     headers: {
@@ -61,7 +61,7 @@ export const payCheckout = createAsyncThunk(
             )
             return response.data;
         } catch (error) {
-            return rejectWithValue(error.response?.data || error.message)
+            return rejectWithValue(error.response?.data?.message || error.message)
         }
     }
 )

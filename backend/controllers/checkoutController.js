@@ -12,7 +12,10 @@ exports.createCheckout = catchAsync(async (req, res) => {
     const { checkoutItems, shippingAddress, paymentMethod, totalPrice } = req.body
 
     if (!checkoutItems || checkoutItems.length === 0) {
-        return res.status(400).json({ message: "No items in checkout" })
+        return res.status(400).json({ 
+            success: false,
+            message: "No items in checkout" 
+        })
     }
 
     try {
@@ -27,10 +30,20 @@ exports.createCheckout = catchAsync(async (req, res) => {
             isPaid: false
         });
         console.log(`Checkout created for user: ${req.user._id}`);
-        return res.status(201).json(newCheckout)
+        
+        // ✅ FIX: Return consistent response format
+        return res.status(201).json({
+            success: true,
+            checkout: newCheckout,
+            message: 'Checkout created successfully'
+        })
     } catch (error) {
         console.error("Error Creating checkout session:", error);
-        return res.status(500).json({ message: "Server Error" })
+        return res.status(500).json({ 
+            success: false,
+            message: "Server Error",
+            error: error.message 
+        })
     }
 });
 
@@ -44,7 +57,10 @@ exports.updateCheckout = catchAsync(async (req, res) => {
         const checkout = await Checkout.findById(req.params.id);
 
         if (!checkout) {
-            return res.status(404).json({ message: "Checkout not found" })
+            return res.status(404).json({ 
+                success: false,
+                message: "Checkout not found" 
+            })
         }
 
         if (paymentStatus === "paid") {
@@ -54,13 +70,25 @@ exports.updateCheckout = catchAsync(async (req, res) => {
             checkout.paidAt = Date.now();
             await checkout.save();
 
-            return res.status(200).json(checkout);
+            // ✅ FIX: Return consistent response format
+            return res.status(200).json({
+                success: true,
+                checkout,
+                message: 'Payment updated successfully'
+            });
         } else {
-            return res.status(400).json({ message: "Invalid Payment Status" })
+            return res.status(400).json({ 
+                success: false,
+                message: "Invalid Payment Status" 
+            })
         }
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Server Error" })
+        console.error('Update checkout error:', error);
+        return res.status(500).json({ 
+            success: false,
+            message: "Server Error",
+            error: error.message 
+        })
     }
 })
 
@@ -94,16 +122,35 @@ exports.finalizeCheckout = catchAsync(async (req, res) => {
             checkout.isFinalized = true;
             checkout.finalizedAt = Date.now();
             await checkout.save();
-            // Delete the cart associated with teh user
+            
+            // Delete the cart associated with the user
             await Cart.findOneAndDelete({ user: checkout.user })
-            return res.status(201).json(finalOrder);
+            
+            console.log('Order finalized:', finalOrder); // ✅ Debug
+            
+            // ✅ FIX: Return order wrapped in object with success flag
+            return res.status(201).json({
+                success: true,
+                order: finalOrder,
+                message: 'Order created successfully'
+            });
         } else if (checkout.isFinalized) {
-            return res.status(400).json({ message: "Checkout already finalized" })
+            return res.status(400).json({ 
+                success: false,
+                message: "Checkout already finalized" 
+            })
         } else {
-            return res.status(400).json({ message: "Checkout is not Paid" })
+            return res.status(400).json({ 
+                success: false,
+                message: "Checkout is not Paid" 
+            })
         }
     } catch (error) {
-        console.error(error);
-        return res.status(500).json({ message: "Server Error" })
+        console.error('Finalize checkout error:', error);
+        return res.status(500).json({ 
+            success: false,
+            message: "Server Error",
+            error: error.message 
+        })
     }
 })

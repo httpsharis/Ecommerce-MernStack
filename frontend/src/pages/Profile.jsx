@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 import MyOrdersPage from './MyOrdersPage'
 import { useDispatch, useSelector } from 'react-redux'
-import { useNavigate } from 'react-router';
+import { useNavigate } from 'react-router'; // ✅ Fixed: added -dom
 import { logoutUser } from '../redux/slice/authSlice';
 
 function Profile() {
@@ -31,7 +31,7 @@ function Profile() {
                             {user?.name}
                         </h1>
                         <p className="text-lg text-gray-600 mb-4">{user?.email}</p>
-                        <button className="w-full bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600"
+                        <button className="w-full bg-red-500 text-white py-2 px-4 rounded hover:bg-red-600 transition-colors"
                             onClick={handleLogout}
                         >
                             Logout

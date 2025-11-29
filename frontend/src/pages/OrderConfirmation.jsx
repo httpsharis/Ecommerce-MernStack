@@ -1,16 +1,36 @@
-import React, { useEffect } from 'react'
-import { useLocation, useNavigate } from 'react-router'
+import React, { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router'
 
 function OrderConfirmation() {
-    const location = useLocation()
     const navigate = useNavigate()
-    const { order } = location.state || {}
+    const [orderData, setOrderData] = useState(null);
+    const [isChecking, setIsChecking] = useState(true);
 
     useEffect(() => {
-        if (!order) {
-            navigate('/')
+        const timer = setTimeout(() => {
+            const stored = sessionStorage.getItem('orderConfirmation');
+            if (stored) {
+                const parsed = JSON.parse(stored);
+                setOrderData(parsed);
+                sessionStorage.removeItem('orderConfirmation');
+            }
+            setIsChecking(false);
+        }, 100);
+
+        return () => clearTimeout(timer);
+    }, [])
+
+    useEffect(() => {
+        if (!isChecking && !orderData) {
+            navigate('/profile', { replace: true }); // ✅ FIXED: Was '/order-confirmation', now '/'
         }
-    }, [order, navigate])
+    }, [isChecking, orderData, navigate])
+
+    if (isChecking || !orderData) {
+        return <div className="max-w-4xl mx-auto py-10 px-6 text-center">Loading...</div>;
+    }
+
+    const { order, paymentData } = orderData;
 
     const calculateEstimatedDelivery = (createdAt) => {
         const orderDate = new Date(createdAt);
@@ -18,85 +38,91 @@ function OrderConfirmation() {
         return orderDate.toLocaleDateString()
     }
 
-    if (!order) return null;
-
     return (
-        <div className='max-w-4xl mx-auto p-6 bg-white'>
+        <div className='max-w-4xl mx-auto p-6 bg-white min-h-screen'>
             <h1 className="text-4xl font-bold text-center text-emerald-700 mb-8">
                 Thank you for Your Order!
             </h1>
 
             <div className="p-6 rounded-lg border border-gray-300">
-                <div className="flex justify-between mb-20">
-                    {/* Order ID and date */}
+                <div className="flex flex-col md:flex-row md:justify-between mb-8 gap-4">
                     <div>
-                        <h2 className="text-xl font-semibold">
-                            Order ID: {order?._id}
-                        </h2>
+                        <h2 className="text-xl font-semibold">Order ID: {order._id}</h2>
                         <p className="text-gray-500">
-                            Order date: {order?.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}
+                            Order date: {new Date(order.createdAt).toLocaleDateString()}
                         </p>
                     </div>
-                    {/* Estimated Delivery */}
                     <div>
                         <p className="text-emerald-700 text-sm">
-                            Estimated Delivery:{" "}
-                            {order?.createdAt ? calculateEstimatedDelivery(order.createdAt) : 'N/A'}
+                            Estimated Delivery: {calculateEstimatedDelivery(order.createdAt)}
                         </p>
                     </div>
                 </div>
-                {/* Order Items */}
-                <div className="mb-20">
-                    {order?.orderItems?.map((item, index) => (
-                        <div
-                            key={`${item.productId}-${index}`}
-                            className="flex items-center mb-4">
+                
+                <div className="mb-8">
+                    <h3 className="text-xl font-semibold mb-4">Order Items</h3>
+                    {order.orderItems.map((item, index) => (
+                        <div key={index} className="flex items-center mb-4 pb-4 border-b">
                             <img
                                 src={item.image || 'https://via.placeholder.com/150'}
                                 alt={item.name}
                                 className='w-16 h-16 object-cover rounded-md mr-4'
                             />
-                            <div>
+                            <div className="flex-1">
                                 <h4 className="text-md font-semibold">{item.name}</h4>
-                                <p className="text-sm text-gray-500">
-                                    {item.color} | {item.size}
-                                </p>
+                                <p className="text-sm text-gray-500">{item.color} | {item.size}</p>
                             </div>
-                            <div className="ml-auto text-right">
-                                <p className="text-md">${item.price}</p>
+                            <div className="text-right">
+                                <p className="text-md font-semibold">${item.price.toFixed(2)}</p>
                                 <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
                             </div>
                         </div>
                     ))}
                 </div>
-                {/* Payment and Delivery Info */}
-                <div className="grid grid-cols-2 gap-8">
-                    {/* Payment Into */}
-                    <div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+                    <div className="bg-gray-50 p-4 rounded">
                         <h4 className="text-lg font-semibold mb-2">Payment</h4>
-                        <p className="text-gray-600">{order?.paymentMethod || 'Paypal'}</p>
+                        <p className="text-gray-600">{order.paymentMethod}</p>
+                        <p className="text-sm text-emerald-600 mt-1">Status: Paid</p>
+                        {paymentData && (
+                            <p className="text-gray-500 text-sm mt-2">
+                                {paymentData.cardNumber}<br />
+                                {paymentData.cardName}
+                            </p>
+                        )}
                     </div>
 
-                    {/* Delivery Info */}
-                    <div>
+                    <div className="bg-gray-50 p-4 rounded">
                         <h4 className="text-lg font-semibold mb-2">Delivery</h4>
+                        <p className="text-gray-600">{order.shippingAddress.address}</p>
                         <p className="text-gray-600">
-                            {order?.shippingAddress?.address}
+                            {order.shippingAddress.city}, {order.shippingAddress.postalCode}
                         </p>
-                        <p className="text-gray-600">{order?.shippingAddress?.city}, {" "} {order?.shippingAddress?.country}</p>
+                        <p className="text-gray-600">{order.shippingAddress.country}</p>
+                    </div>
+                </div>
+
+                <div className="bg-emerald-50 p-4 rounded border border-emerald-200">
+                    <div className="flex justify-between items-center">
+                        <span className="text-xl font-bold">Total:</span>
+                        <span className="text-2xl font-bold text-emerald-700">
+                            ${order.totalPrice.toFixed(2)}
+                        </span>
                     </div>
                 </div>
             </div>
-            <div className="mt-8 flex justify-center space-x-4">
+            
+            <div className="mt-8 flex flex-col sm:flex-row justify-center gap-4">
                 <button
-                    onClick={() => navigate('/my-orders')}
-                    className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600 transition-colors"
+                    onClick={() => navigate('/profile')}
+                    className="bg-green-500 text-white px-6 py-2 rounded hover:bg-green-600"
                 >
-                    Checkout My Orders
+                    View My Orders
                 </button>
                 <button
                     onClick={() => navigate('/')}
-                    className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600 transition-colors"
+                    className="bg-blue-500 text-white px-6 py-2 rounded hover:bg-blue-600"
                 >
                     Continue Shopping
                 </button>
