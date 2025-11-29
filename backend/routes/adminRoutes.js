@@ -3,6 +3,7 @@ const router = express.Router()
 
 const { protect, autherizeRoles } = require('./../middleware/auth')
 const { getAllUsers, addUser, updateUserRole, deleteUser } = require('../controllers/adminController')
+const { getSingleUser } = require('../controllers/userController')
 
 router
     .route("/users")
@@ -11,7 +12,7 @@ router
 
 router
     .route("/user/:id")
-    //     .get(protect, autherizeRoles("admin"), getSingleUser)
+    .get(protect, autherizeRoles("admin"), getSingleUser)
     .put(protect, autherizeRoles("admin"), updateUserRole)
     .delete(protect, autherizeRoles("admin"), deleteUser)
 
