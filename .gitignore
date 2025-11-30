@@ -1,8 +1,45 @@
-/uploads/*
-!uploads/.gitkeep
+# Logs
+logs
+*.log
+npm-debug.log*
+
+# Node modules
 node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Environment files
 .env
+frontend/.env
+backend/.env
 .env.local
-.env.development.local
-.env.test.local
-.env.production.local
+.env.production
+
+# Build outputs
+frontend/dist/
+frontend/build/
+backend/dist/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Uploads (if storing locally)
+backend/uploads/
+
+# Package locks (optional - some prefer to keep these)
+# package-lock.json
+# yarn.lock
+
+# Coverage reports
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
