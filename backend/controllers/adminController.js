@@ -1,4 +1,6 @@
 const User = require("./../models/userModel");
+const Order = require("./../models/orderModel");
+const Product = require("./../models/productModel"); // ✅ Add this import
 
 // @route GET /api/admin/users
 // @desc Get All Users (Admin Only)
@@ -147,5 +149,130 @@ exports.deleteUser = async (req, res) => {
     } catch (error) {
         console.error('❌ Delete user error:', error);
         res.status(500).json({ success: false, message: error.message || "Server Error" });
+    }
+};
+
+// @route PUT /api/admin/orders/:id
+// @desc Update Order Status (Admin Only)
+exports.updateOrderStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+
+        console.log('📥 Updating order:', id, 'Status:', status);
+
+        const order = await Order.findById(id);
+
+        if (!order) {
+            return res.status(404).json({ 
+                success: false,
+                message: "Order not found" 
+            });
+        }
+
+        // Update status
+        order.status = status;
+
+        // If delivered, set deliveredAt
+        if (status === 'Delivered') {
+            order.isDelivered = true;
+            order.deliveredAt = Date.now();
+        }
+
+        await order.save();
+
+        // ✅ Fetch the updated order WITH user populated
+        const updatedOrder = await Order.findById(id).populate('user', 'name email');
+
+        console.log('✅ Order updated:', updatedOrder._id);
+
+        res.status(200).json({
+            success: true,
+            message: "Order status updated",
+            order: updatedOrder
+        });
+    } catch (error) {
+        console.error('❌ Update order error:', error);
+        res.status(500).json({ 
+            success: false,
+            message: error.message || "Server Error" 
+        });
+    }
+};
+
+// ✅ ADD THIS - Delete Product (Admin Only)
+// @route DELETE /api/admin/products/:id
+// @desc Delete Product (Admin Only)
+exports.deleteProduct = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        console.log('🗑️ Deleting product:', id);
+
+        const product = await Product.findById(id);
+
+        if (!product) {
+            return res.status(404).json({ 
+                success: false,
+                message: "Product not found" 
+            });
+        }
+
+        await Product.findByIdAndDelete(id);
+
+        console.log('✅ Product deleted:', id);
+
+        res.status(200).json({ 
+            success: true,
+            message: "Product deleted successfully",
+            productId: id
+        });
+    } catch (error) {
+        console.error('❌ Delete product error:', error);
+        res.status(500).json({ 
+            success: false,
+            message: error.message || "Server Error" 
+        });
+    }
+};
+
+// @route PUT /api/admin/products/:id
+// @desc Update Product (Admin Only)
+exports.updateProduct = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updateData = req.body;
+
+        console.log('📥 Updating product:', id);
+
+        const product = await Product.findById(id);
+
+        if (!product) {
+            return res.status(404).json({ 
+                success: false,
+                message: "Product not found" 
+            });
+        }
+
+        // Update fields
+        Object.keys(updateData).forEach(key => {
+            product[key] = updateData[key];
+        });
+
+        const updatedProduct = await product.save();
+
+        console.log('✅ Product updated:', updatedProduct._id);
+
+        res.status(200).json({
+            success: true,
+            message: "Product updated successfully",
+            product: updatedProduct
+        });
+    } catch (error) {
+        console.error('❌ Update product error:', error);
+        res.status(500).json({ 
+            success: false,
+            message: error.message || "Server Error" 
+        });
     }
 };

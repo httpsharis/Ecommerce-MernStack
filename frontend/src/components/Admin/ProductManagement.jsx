@@ -1,22 +1,39 @@
-import React from 'react'
+import React, { useEffect } from 'react'
+import { useDispatch, useSelector } from 'react-redux'
 import { Link } from 'react-router'
+import { fetchAllProducts, deleteProduct } from '../../redux/slice/adminSlice'
+import { toast } from 'sonner'
 
 function ProductManagement() {
 
-    const products = [
-        {
-            _id: 123,
-            name: "Shirt",
-            price: 110,
-            sku: "123456"
-        },
-    ]
+    const dispatch = useDispatch()
+    const { products = [], loading = false, error = null } = useSelector((state) => state.admin || {})
 
-    const handleDelete = (id) => {
-        if (window.confirm("Are you sure you want to delete the Product?")) {
-            console.log("Delete Product with id:", id)
+    useEffect(() => {
+        dispatch(fetchAllProducts())
+    }, [dispatch])
+
+    // ✅ Debug - check what products we have
+    console.log('🛍️ Products in state:', products)
+
+    const handleDelete = async (id) => {
+        if (window.confirm("Are you sure you want to delete this Product?")) {
+            try {
+                const result = await dispatch(deleteProduct(id))
+                
+                if (result.type === 'admin/deleteProduct/fulfilled') {
+                    toast.success('Product deleted successfully!')
+                } else {
+                    toast.error(result.payload || 'Failed to delete product')
+                }
+            } catch {
+                toast.error('Failed to delete product')
+            }
         }
     }
+
+    if (loading) return <p className="text-center p-4">Loading products...</p>
+    if (error) return <p className="text-center p-4 text-red-500">Error: {typeof error === 'object' ? JSON.stringify(error) : error}</p>
 
     return (
         <div className='max-w-7xl mx-auto p-6'>
@@ -34,14 +51,14 @@ function ProductManagement() {
                         </tr>
                     </thead>
                     <tbody>
-                        {products.length > 0 ? products.map((product) => (
+                        {products && products.length > 0 ? products.map((product) => (
                             <tr
                                 key={product._id}
                                 className='border-b border-gray-300 hover:bg-gray-50 cursor-pointer'
                             >
                                 <td className="p-4 font-medium text-gray-900 whitespace-nowrap">{product.name}</td>
                                 <td className="p-4">${product.price}</td>
-                                <td className="p-4">${product.sku}</td>
+                                <td className="p-4">{product.sku || 'N/A'}</td>
                                 <td className="p-4">
                                     <Link
                                         to={`/admin/products/${product._id}/edit`}
@@ -52,7 +69,9 @@ function ProductManagement() {
                                     <button
                                         className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600 cursor-pointer"
                                         onClick={() => handleDelete(product._id)}
-                                    >Delete</button>
+                                    >
+                                        Delete
+                                    </button>
                                 </td>
                             </tr>
                         )) : (
