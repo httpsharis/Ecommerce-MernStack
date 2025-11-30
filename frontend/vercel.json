@@ -8,10 +8,10 @@
             "config": {"distDir": "dist"}
         }
     ],
-    "rewrites": [
+       "rewrites": [
         {
-            "sourse":"/(.*)",
-            "desttination": "/"
+            "source": "/(.*)",
+            "destination": "/"
         }
     ]
 }

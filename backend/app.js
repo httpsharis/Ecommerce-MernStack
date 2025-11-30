@@ -7,10 +7,24 @@ const cors = require('cors')
 app.use(express.json());
 app.use(cookieParser())
 
-// ✅ Configure CORS properly
+// ✅ Configure CORS for production
+const allowedOrigins = [
+    'http://localhost:5173',
+    process.env.FRONTEND_URL  // Add your Vercel frontend URL here later
+].filter(Boolean);
+
 app.use(cors({
-    origin: 'http://localhost:5173', // Your frontend URL
-    credentials: true, // Allow cookies
+    origin: function (origin, callback) {
+        // Allow requests with no origin (mobile apps, Postman, etc.)
+        if (!origin) return callback(null, true);
+        
+        if (allowedOrigins.includes(origin)) {
+            callback(null, true);
+        } else {
+            callback(new Error('Not allowed by CORS'));
+        }
+    },
+    credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
