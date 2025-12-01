@@ -1,36 +1,32 @@
 const express = require('express');
-const app = express()
-const errorMiddleware = require('./middleware/errorMiddleware');
+const app = express();
+const cors = require('cors');
 const cookieParser = require('cookie-parser');
-const cors = require('cors')
+const errorMiddleware = require('./middleware/errorMiddleware');
 
+// Middleware
 app.use(express.json());
-app.use(cookieParser())
+app.use(cookieParser());
 
-// ✅ Configure CORS for production
-const allowedOrigins = [
-    'http://localhost:5173',
-    process.env.FRONTEND_URL  // Add your Vercel frontend URL here later
-].filter(Boolean);
-
+// CORS
 app.use(cors({
-    origin: function (origin, callback) {
-        // Allow requests with no origin (mobile apps, Postman, etc.)
-        if (!origin) return callback(null, true);
-        
-        if (allowedOrigins.includes(origin)) {
-            callback(null, true);
-        } else {
-            callback(new Error('Not allowed by CORS'));
-        }
-    },
+    origin: [
+        'http://localhost:5173',
+        process.env.FRONTEND_URL,
+        /https:\/\/ecom-mernstack-frontend.*\.vercel\.app$/
+    ].filter(Boolean),
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Parse URL-encoded bodies (for POST/PUT/PATCH)
-app.use(express.urlencoded({ extended: true }));
+// ✅ Test route - Add this at the top
+app.get('/', (req, res) => {
+    res.json({
+        success: true,
+        message: 'API is running...'
+    });
+});
 
 // Route Imports
 const product = require('./routes/productRoute');
@@ -61,6 +57,5 @@ app.use("/api/admin", adminOrders)
 
 // Middleware for errors
 app.use(errorMiddleware)
-
 
 module.exports = app
