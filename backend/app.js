@@ -8,17 +8,26 @@ const errorMiddleware = require('./middleware/errorMiddleware');
 app.use(express.json());
 app.use(cookieParser());
 
+// Middleware to log origin for debugging
+app.use((req, res, next) => {
+    console.log('Request Origin:', req.headers.origin);
+    next();
+});
+
 // CORS
-app.use(cors({
+const corsOptions = {
     origin: [
         'http://localhost:5173',
         process.env.FRONTEND_URL,
         /https:\/\/ecom-mernstack-frontend.*\.vercel\.app$/
     ].filter(Boolean),
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization']
-}));
+};
+
+app.use(cors(corsOptions));
+app.options(/.*/, cors(corsOptions)); // Explicitly handle preflight requests
 
 // ✅ Test route - Add this at the top
 app.get('/', (req, res) => {
